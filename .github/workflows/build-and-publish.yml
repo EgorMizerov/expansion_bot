@@ -18,5 +18,3 @@ jobs:
           name: egormizerov/expansion_bot
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      
-      
