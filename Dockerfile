@@ -1,5 +1,7 @@
 FROM golang:1.22.3-alpine AS build_base
 
+RUN go install github.com/go-delve/delve/cmd/dlv@latest
+
 WORKDIR /tmp/bot
 
 COPY . .
