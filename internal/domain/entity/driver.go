@@ -4,53 +4,56 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
 )
 
-type DriverID string
+type DriverID uuid.UUID
+type JumpID int
+type TelegramID int
+type FleetID string
 
 type Driver struct {
-	ID                DriverID
-	TelegramID        int64
-	FirstName         string
-	MiddleName        string
-	LastName          string
-	Address           string
-	PhoneNuber        PhoneNumber
-	CardNumber        CardNumber
-	ReferralKey       *int64
+	// ID's
+	ID         DriverID    // Внутренний ID
+	TelegramID *TelegramID // Привязку к телеграмму осуществляет администратор
+	JumpID     JumpID
+	FleetID    FleetID
+
+	// Person Info
+	FirstName      string
+	MiddleName     *string
+	LastName       string
+	City           string
+	IsSelfEmployed *bool
+	PhoneNuber     PhoneNumber
+	DriverLicense  DriverLicense
+
+	// Account Info
+	WorkRule          *WorkRule
+	WorkRuleUpdatedAt *time.Time
 	AcceptCash        bool
-	DriverLicense     DriverLicense
-	WorkRule          WorkRule
-	WorkRuleUpdatedAt time.Time
-	IsSelfEmployed    bool
 	CarID             CarID
-	CreatedAt         time.Time
+
+	CreatedAt time.Time
 }
 
-func NewDriver(telegramID int64, firstName string, lastName string, middleName string, phoneNumber PhoneNumber, referralKey *int64, license DriverLicense, workRule WorkRule, isSelfEmployed bool, cardNumber CardNumber) *Driver {
+func NewDriver(jumpID JumpID, fleetID FleetID, firstName string, lastName string, middleName *string, city string, phoneNumber PhoneNumber, carID CarID, driverLicense DriverLicense) *Driver {
 	return &Driver{
-		TelegramID:        telegramID,
-		FirstName:         firstName,
-		MiddleName:        middleName,
-		LastName:          lastName,
-		PhoneNuber:        phoneNumber,
-		ReferralKey:       referralKey,
-		AcceptCash:        false,
-		DriverLicense:     license,
-		CreatedAt:         time.Now(),
-		WorkRule:          workRule,
-		WorkRuleUpdatedAt: time.Now(),
-		IsSelfEmployed:    isSelfEmployed,
-		CardNumber:        cardNumber,
+		ID:            DriverID(uuid.New()),
+		TelegramID:    nil,
+		JumpID:        jumpID,
+		FleetID:       fleetID,
+		FirstName:     firstName,
+		MiddleName:    middleName,
+		LastName:      lastName,
+		City:          city,
+		PhoneNuber:    phoneNumber,
+		DriverLicense: driverLicense,
+		AcceptCash:    false,
+		CarID:         carID,
+		CreatedAt:     time.Now(),
 	}
-}
-
-func (self *Driver) SetDriverID(id DriverID) {
-	self.ID = id
-}
-
-func (self *Driver) SetCarID(id CarID) {
-	self.CarID = id
 }
 
 func (self *Driver) Fullname() string {

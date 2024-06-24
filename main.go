@@ -7,13 +7,15 @@ import (
 	"strconv"
 	"time"
 
+	fleet2 "github.com/EgorMizerov/expansion_bot/internal/infrastructure/fleet_v2"
+	"github.com/EgorMizerov/expansion_bot/migrations"
 	tele "github.com/EgorMizerov/telebot"
 	"github.com/caarlos0/env/v11"
 	"github.com/go-redis/redis"
 	"github.com/joho/godotenv"
 
 	"github.com/EgorMizerov/expansion_bot/config"
-	services2 "github.com/EgorMizerov/expansion_bot/internal/application/services"
+	"github.com/EgorMizerov/expansion_bot/internal/application/services"
 	"github.com/EgorMizerov/expansion_bot/internal/database"
 	postgres2 "github.com/EgorMizerov/expansion_bot/internal/infrastructure/db/postgres"
 	"github.com/EgorMizerov/expansion_bot/internal/infrastructure/fleet"
@@ -59,8 +61,14 @@ func main() {
 		return
 	}
 
+	if err = migrations.Migrate(db, "./migrations"); err != nil {
+		logger.Error("failed to up migrations", slog.Any("error", err))
+		return
+	}
+
 	// Dependencies
 	fleetClient := fleet.NewClient(config.FleetHost, config.FleetParkID, config.FleetClientID, config.FleetAPIKey)
+	fleet2Client := fleet2.NewFleetClient(config.FleetHost, config.FleetParkID, config.FleetClientID, config.FleetAPIKey)
 	jumpClient := jump.NewJumpClient(config.JumpTaxiHost, config.JumpTaxiClientKey)
 	redisClient := redis.NewClient(&redis.Options{Addr: fmt.Sprintf("%s:%s", config.RedisHost, config.RedisPort)})
 
@@ -74,14 +82,15 @@ func main() {
 
 	driverRepository := postgres2.NewDriverRepository(db)
 	carRepository := postgres2.NewCarRepository(db)
+	registrationApplicationRepository := postgres2.NewRegistrationApplicationRepository(db)
 
-	adminService := services2.NewAdminService(driverRepository, carRepository, fleetClient, jumpClient)
-
+	adminService := services.NewAdminService(driverRepository, carRepository, fleetClient, jumpClient)
+	registrationApplicationService := services.NewRegistrationApplicationService(fleet2Client, jumpClient, registrationApplicationRepository, driverRepository, carRepository)
 	telebot.NewAdminHandler(bot, stateMachine, adminService)
 	telebot.NewGuestHandler(bot)
 
 	go func() {
-		err := http.ListenAndServe("localhost:8080", new(rest.JumpWebhook))
+		err := http.ListenAndServe("localhost:8080", rest.NewJumpWebhook(registrationApplicationService))
 		if err != nil {
 			panic(err)
 		}

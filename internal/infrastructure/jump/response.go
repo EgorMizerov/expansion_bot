@@ -3,6 +3,7 @@ package jump
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 
 	"github.com/pkg/errors"
@@ -22,22 +23,25 @@ type Meta struct {
 	ListPage    int `json:"list_page"`
 }
 
-func getListedResponse[ItemType any](ctx context.Context, client *JumpClient, method string, url URL, headerSetter func(request *http.Request)) (*ListedResponse[ItemType], error) {
+func getListedResponse[ItemType any](ctx context.Context, client *JumpClient, method string, url URL, headerSetter func(request *http.Request)) (ListedResponse[ItemType], error) {
 	request, _ := http.NewRequestWithContext(ctx, method, url.String(), nil)
 	headerSetter(request)
 
 	response, err := client.Do(request)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to do request")
+		return ListedResponse[ItemType]{}, errors.Wrap(err, "failed to do request")
 	}
-
 	var result ListedResponse[ItemType]
-	err = json.NewDecoder(response.Body).Decode(&result)
+	bytes, err := io.ReadAll(response.Body)
+	x := string(bytes)
+	_ = x
+	err = json.Unmarshal(bytes, &result)
+	//err = json.NewDecoder(response.Body).Decode(&result)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode response")
+		return ListedResponse[ItemType]{}, errors.Wrap(err, "failed to decode response")
 	}
 
-	return &result, nil
+	return result, nil
 }
 
 func expandPaginatedResponse[ItemType any](ctx context.Context, client *JumpClient, method string, url URL, headerSetter func(request *http.Request)) ([]ItemType, error) {

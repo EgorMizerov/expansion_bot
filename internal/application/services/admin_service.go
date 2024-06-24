@@ -4,17 +4,13 @@ import (
 	"context"
 	"io"
 	"strconv"
-	"time"
 
 	"github.com/EgorMizerov/expansion_bot/internal/application/command"
 	"github.com/EgorMizerov/expansion_bot/internal/domain/entity"
 	"github.com/EgorMizerov/expansion_bot/internal/domain/repository"
 	"github.com/EgorMizerov/expansion_bot/internal/infrastructure/fleet"
-	"github.com/EgorMizerov/expansion_bot/internal/infrastructure/fleet/request"
-	"github.com/EgorMizerov/expansion_bot/internal/infrastructure/fleet/types"
 	"github.com/EgorMizerov/expansion_bot/internal/infrastructure/jump"
 
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
 	"github.com/xuri/excelize/v2"
@@ -29,41 +25,6 @@ type AdminService struct {
 
 func NewAdminService(driverRepository repository.DriverRepository, carRepository repository.CarRepository, fleet *fleet.Client, jumpClient *jump.JumpClient) *AdminService {
 	return &AdminService{driverRepository: driverRepository, carRepository: carRepository, fleet: fleet, jumpClient: jumpClient}
-}
-
-func (self *AdminService) CreateDriver(ctx context.Context, driver *entity.Driver, car *entity.Car) error {
-	carID, err := self.fleet.CreateCar(context.TODO(), &types.CreateCarRequest{Car: car}, uuid.NewString())
-	if err != nil {
-		return errors.Wrap(err, "failed to create a car in the fleet")
-	}
-	car.SetID(carID)
-
-	driverProfile, err := self.fleet.CreateDriverProfile(ctx, request.CreateDriverProfileRequest{
-		Driver:     driver,
-		WorkRuleID: driver.WorkRule.ID,
-		HireDate:   time.Now(),
-	}, uuid.NewString())
-	if err != nil {
-		return errors.Wrap(err, "failed to create a driver profile in the fleet")
-	}
-	driver.SetDriverID(entity.DriverID(driverProfile.ID))
-
-	err = self.fleet.CarBinding(ctx, car.ID, driver.ID)
-	if err != nil {
-		return errors.Wrap(err, "failed to attach the car to the driver in the fleet")
-	}
-	driver.SetCarID(carID)
-
-	err = self.carRepository.CreateCar(ctx, car)
-	if err != nil {
-		return errors.Wrap(err, "failed to create a car in the database")
-	}
-	err = self.driverRepository.CreateDriver(ctx, driver)
-	if err != nil {
-		return errors.Wrap(err, "failed to create a driver in the database")
-	}
-
-	return nil
 }
 
 func (self *AdminService) GetCards(ctx context.Context) (*command.GetCardsCommandResult, error) {

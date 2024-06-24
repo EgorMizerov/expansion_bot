@@ -44,9 +44,9 @@ func (self CreateDriverProfileRequest) ToBody() DriverProfile {
 				TotalSinceDate string "json:\"total_since_date\""
 			} "json:\"driver_license_experience\""
 			FullName struct {
-				FirstName  string "json:\"first_name\""
-				LastName   string "json:\"last_name\""
-				MiddleName string "json:\"middle_name\""
+				FirstName  string  "json:\"first_name\""
+				LastName   string  "json:\"last_name\""
+				MiddleName *string "json:\"middle_name,omitempty\""
 			} "json:\"full_name\""
 		}{
 			ContactInfo: struct {
@@ -72,9 +72,9 @@ func (self CreateDriverProfileRequest) ToBody() DriverProfile {
 				TotalSinceDate: self.Driver.DriverLicense.DrivingExperience.Format("2006-01-02"),
 			},
 			FullName: struct {
-				FirstName  string "json:\"first_name\""
-				LastName   string "json:\"last_name\""
-				MiddleName string "json:\"middle_name\""
+				FirstName  string  "json:\"first_name\""
+				LastName   string  "json:\"last_name\""
+				MiddleName *string "json:\"middle_name,omitempty\""
 			}{
 				FirstName:  self.Driver.FirstName,
 				LastName:   self.Driver.LastName,
@@ -113,9 +113,9 @@ type DriverProfile struct {
 			TotalSinceDate string `json:"total_since_date"`
 		} `json:"driver_license_experience"`
 		FullName struct {
-			FirstName  string `json:"first_name"`
-			LastName   string `json:"last_name"`
-			MiddleName string `json:"middle_name"`
+			FirstName  string  `json:"first_name"`
+			LastName   string  `json:"last_name"`
+			MiddleName *string `json:"middle_name,omitempty"`
 		} `json:"full_name"`
 	} `json:"person"`
 	Profile struct {

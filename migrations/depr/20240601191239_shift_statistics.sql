@@ -1,0 +1,13 @@
+-- -- +goose Up
+--
+-- CREATE TABLE shift_statistics
+-- (
+--     shift_id uuid REFERENCES shift(id) PRIMARY KEY,
+--     card bigint NOT NULL,
+--     cash bigint NOT NULL,
+--     tips bigint NOT NULL,
+--     total bigint NOT NULL,
+--     money_per_hour bigint NOT NULL,
+--     work_time bigint NOT NULL
+-- );
+-- -- +goose Down

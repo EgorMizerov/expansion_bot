@@ -8,8 +8,10 @@ import (
 )
 
 const (
-	getPaymentsURL    = "/payments?page={{.Page}}"
-	getTransactionURL = "/payments?page={{.Page}} {{range .DriverIDs }}"
+	getPaymentsURL      = "/payments?page={{.Page}}"
+	getTransactionURL   = "/payments?page={{.Page}} {{range .DriverIDs }}"
+	getDriversURL       = "/drivers?order=-id"
+	getDriverByPhoneURL = "/drivers?search={{.PhoneNumber}}"
 )
 
 type JumpClient struct {
@@ -29,6 +31,19 @@ func (self *JumpClient) GetPayments(ctx context.Context) ([]types.Payment, error
 
 func (self *JumpClient) GetTransactions(ctx context.Context) ([]types.Transaction, error) {
 	return expandPaginatedResponse[types.Transaction](ctx, self, http.MethodGet, self.getURL(getPaymentsURL), self.setHeaders)
+}
+
+func (self *JumpClient) GetDrivers(ctx context.Context) ([]types.Transaction, error) {
+	return expandPaginatedResponse[types.Transaction](ctx, self, http.MethodGet, self.getURL(getDriversURL), self.setHeaders)
+}
+
+func (self *JumpClient) GetDriverByPhoneNumber(ctx context.Context, phoneNumber string) (types.Driver, error) {
+	items, err := getListedResponse[types.Driver](ctx, self, http.MethodGet, self.getURL(getDriverByPhoneURL).SetParam("PhoneNumber", phoneNumber), self.setHeaders)
+	if err != nil || len(items.Items) < 0 {
+		return types.Driver{}, err
+	}
+	return items.Items[0], nil
+
 }
 
 func (self *JumpClient) Do(request *http.Request) (*http.Response, error) {

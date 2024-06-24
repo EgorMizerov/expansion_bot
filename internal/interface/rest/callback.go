@@ -2,13 +2,13 @@ package rest
 
 import "time"
 
-type Request struct {
+type Callback struct {
 	Action    RequestAction `json:"action"`
-	Item      RequestItem   `json:"item"`
+	Item      CallbackItem  `json:"item"`
 	UpdatedAt time.Time     `json:"updated_at"`
 }
 
-type RequestItem struct {
+type CallbackItem struct {
 	ID                     int            `json:"id"`
 	Phone                  *string        `json:"phone,omitempty"`
 	Direction              *Direction     `json:"direction,omitempty"`
@@ -27,7 +27,7 @@ type PersonInfo struct {
 	FirstName         string  `json:"first_name"`
 	MiddleName        *string `json:"middle_name,omitempty"`
 	BirthDate         *string `json:"birth_date,omitempty"`
-	City              *string `json:"city,omitempty"`
+	City              string  `json:"city"`
 	DriverLicenseTaxi *string `json:"driver_license_taxi,omitempty"`
 	Comment           *string `json:"comment,omitempty"`
 	//TODO: Files
@@ -54,7 +54,7 @@ type DriverLicense struct {
 	Country             Country `json:"country"`
 	Number              string  `json:"number"`
 	IssueDate           string  `json:"issue_date"`            // YYYY-MM-DD
-	ExpiryDate          *string `json:"expiry_date,omitempty"` // YYYY-MM-DD
+	ExpiryDate          string  `json:"expiry_date,omitempty"` // YYYY-MM-DD
 	ExpiryDateUnlimited *bool   `json:"expiry_date_unlimited,omitempty"`
 	TotalSinceDate      string  `json:"total_since_date"` // YYYY-MM-DD
 	//TODO: Files
@@ -66,6 +66,7 @@ type Country struct {
 }
 
 type Car struct {
+	Brand   string  `json:"brand"`
 	Model   IDName  `json:"model"`
 	Color   IDName  `json:"color"`
 	Year    int     `json:"year"`
@@ -92,7 +93,7 @@ type ApplicationIntegration struct {
 }
 
 type IDName struct {
-	ID   string `json:"id"`
+	ID   int    `json:"id"`
 	Name string `json:"name"`
 }
 
@@ -108,3 +109,14 @@ const (
 	NewIntegrationAction    RequestAction = "new_integration"
 	ChangeIntegrationAction RequestAction = "change_integration"
 )
+
+type Date time.Time
+
+func (self *Date) UnmarshalJSON(b []byte) error {
+	t, err := time.Parse("2006-01-02", string(b))
+	if err != nil {
+		return err
+	}
+	*self = Date(t)
+	return nil
+}

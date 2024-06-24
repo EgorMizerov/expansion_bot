@@ -71,13 +71,13 @@ func (self *Client) UpdateDriverProfile(ctx context.Context, driverID string, co
 	return err
 }
 
-func (self *Client) CreateCar(ctx context.Context, car *types.CreateCarRequest, idempotencyToken string) (entity2.CarID, error) {
-	id, err := Public[types.Car, types.VehicleID](ctx, http.MethodPost, createCar, car.ToBody(), idempotencyToken)
-	if err != nil {
-		return "", err
-	}
-	return entity2.CarID(id.VehicleID), nil
-}
+//func (self *Client) CreateCar(ctx context.Context, car *types.CreateCarRequest, idempotencyToken string) (entity2.CarID, error) {
+//	id, err := Public[types.Car, types.VehicleID](ctx, http.MethodPost, createCar, car.ToBody(), idempotencyToken)
+//	if err != nil {
+//		return "", err
+//	}
+//	return entity2.CarID(id.VehicleID), nil
+//}
 
 func (self *Client) CarBinding(ctx context.Context, carID entity2.CarID, driverID entity2.DriverID) error {
 	_, err := Public[types.Car, any](ctx, http.MethodPut, fmt.Sprintf(carBindingURL, self.parkID, carID, driverID), nil)

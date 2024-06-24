@@ -1,0 +1,10 @@
+-- -- +goose Up
+-- CREATE TABLE IF NOT EXISTS shift
+-- (
+--     id uuid PRIMARY KEY,
+--     user_id int REFERENCES users(id) ON DELETE CASCADE,
+--     started_at timestamptz NOT NULL,
+--     ended_at timestamptz
+-- );
+--
+-- -- +goose Down

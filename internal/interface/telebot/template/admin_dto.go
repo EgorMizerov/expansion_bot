@@ -77,38 +77,6 @@ func (self DriverRegistrationData) MiddleName() string {
 	return strings.Fields(self.FullName)[2]
 }
 
-func (self DriverRegistrationData) ToDriver() *entity.Driver {
-	var refferalKey *int64
-	if self.ReferralKey != 0 {
-		refferalKey = &self.ReferralKey
-	}
-
-	driverLicense := entity.NewDriverLicense(
-		self.RegistrationCertificate,
-		self.DrivingExperience,
-		self.LicenseIssueDate,
-		self.LicenseExpiryDate,
-		self.LicenseCountry,
-	)
-
-	return entity.NewDriver(
-		int64(self.UserID),
-		self.FirstName(),
-		self.LastName(),
-		self.MiddleName(),
-		entity.PhoneNumber(self.PhoneNumber),
-		refferalKey,
-		driverLicense,
-		self.WorkRule,
-		self.IsSelfEmployed,
-		entity.CardNumber(self.CardNumber),
-	)
-}
-
-func (self DriverRegistrationData) ToCar() *entity.Car {
-	return entity.NewCar(self.CarBrand, self.CarModel, self.CarYear.Year(), self.CarColor, self.CarVIN, self.LicensePlateNumber, self.RegistrationCertificate)
-}
-
 type CardsInfoData struct {
 	TinkoffCardsCount int
 	AnotherCardsCount int

@@ -1,5 +1,7 @@
 package types
 
+import "time"
+
 type Payment struct {
 	ID              int64       `json:"id"`
 	CreatedAt       string      `json:"created_at"`
@@ -47,13 +49,13 @@ type PaymentType struct {
 }
 
 type Driver struct {
-	ID         int64      `json:"id"`
-	FullName   string     `json:"full_name"`
-	FirstName  string     `json:"first_name"`
-	SecondName string     `json:"second_name"`
-	LastName   string     `json:"last_name"`
-	Phone      string     `json:"phone"`
-	Group      Aggregator `json:"group"`
+	ID         int64     `json:"id"`
+	FullName   string    `json:"full_name"`
+	FirstName  string    `json:"first_name"`
+	SecondName string    `json:"second_name"`
+	LastName   string    `json:"last_name"`
+	Phone      string    `json:"phone"`
+	CreatedAt  time.Time `json:"created_at"`
 }
 
 type History struct {
