@@ -12,7 +12,7 @@ RUN go mod download
 EXPOSE 8080
 
 #RUN go build -o ./out/bot main.go
-RUN go build -gcflags all=-N -l -o ./out/bot main.go
+RUN go build -gcflags all='-N -l' -o ./out/bot main.go
 
 # Start fresh from a smaller image
 FROM alpine:3.9
