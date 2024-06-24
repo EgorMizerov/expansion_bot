@@ -25,4 +25,6 @@ type Config struct {
 	RedisPassword string `env:"REDIS_PASSWORD"`
 	RedisPort     string `env:"REDIS_PORT" envDefault:"6379"`
 	RedisHost     string `env:"REDIS_HOST" envDefault:"localhost"`
+
+	AppAddr string `env:"APP_ADDR" envDefault:"localhost:8080"`
 }

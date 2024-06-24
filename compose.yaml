@@ -7,9 +7,20 @@ services:
       - "8080:8080"
     env_file: .env
     depends_on:
+      - migrations
       - postgres
       - redis
     network_mode: host
+
+  migrations:
+    image: ghcr.io/kukymbr/goose-docker:3.21.1
+    env_file: .env
+    volumes:
+      - ./migrations:/migrations
+    depends_on:
+      - postgres
+    networks:
+      - bot
 
   redis:
     image: "redis:alpine"

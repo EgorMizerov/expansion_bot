@@ -6,7 +6,7 @@ import (
 
 var (
 	AdminMenuButton                                = InlineButton{Text: "Меню администратора", Unique: AdminMenuData}
-	CreateDriverButton                             = InlineButton{Text: "Регистрация пользователя", WebApp: &WebApp{URL: "https://my.jump.taxi/autoregistration/list/69433/car/edit"}}
+	CreateDriverButton                             = InlineButton{Text: "Регистрация пользователя", WebApp: &WebApp{URL: "https://my.jump.taxi/autoregistration/form/c26193"}}
 	CreateDriverAbortButton                        = InlineButton{Text: "Прервать регистрацию", Unique: Admin_CreateDriver_AbortData}
 	CreateDriverConfirmButton                      = InlineButton{Text: "Подтвердить регистрацию", Unique: Admin_CreateDriver_ConfirmData}
 	CreateDriverInputIDButton                      = InlineButton{Text: "Идентификатор пользователя", Unique: Admin_CreateDriver_InputIDData}
