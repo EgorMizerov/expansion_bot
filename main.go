@@ -89,7 +89,7 @@ func main() {
 	telebot.NewGuestHandler(bot)
 
 	go func() {
-		err := http.ListenAndServe(config.AppAddr, rest.NewJumpWebhook(registrationApplicationService))
+		err := http.ListenAndServe("localhost:8080", rest.NewJumpWebhook(registrationApplicationService))
 		if err != nil {
 			panic(err)
 		}
