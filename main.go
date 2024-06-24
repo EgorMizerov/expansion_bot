@@ -8,7 +8,6 @@ import (
 	"time"
 
 	fleet2 "github.com/EgorMizerov/expansion_bot/internal/infrastructure/fleet_v2"
-	"github.com/EgorMizerov/expansion_bot/migrations"
 	tele "github.com/EgorMizerov/telebot"
 	"github.com/caarlos0/env/v11"
 	"github.com/go-redis/redis"
@@ -61,10 +60,10 @@ func main() {
 		return
 	}
 
-	if err = migrations.Migrate(db, "./migrations"); err != nil {
-		logger.Error("failed to up migrations", slog.Any("error", err))
-		return
-	}
+	//if err = migrations.Migrate(db, "./migrations"); err != nil {
+	//	logger.Error("failed to up migrations", slog.Any("error", err))
+	//	return
+	//}
 
 	// Dependencies
 	fleetClient := fleet.NewClient(config.FleetHost, config.FleetParkID, config.FleetClientID, config.FleetAPIKey)
