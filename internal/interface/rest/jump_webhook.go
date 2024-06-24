@@ -2,6 +2,7 @@ package rest
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
 
 	"github.com/EgorMizerov/expansion_bot/internal/application/interfaces"
@@ -18,6 +19,11 @@ func NewJumpWebhook(registrationApplicationService interfaces.RegistrationApplic
 }
 
 func (self *JumpWebhook) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	slog.Info(
+		"",
+		slog.String("method", request.Method),
+		slog.String("path", request.URL.Path))
+
 	if request.Method != http.MethodPost || request.URL.Path != "/webhook" {
 		return
 	}

@@ -10,7 +10,6 @@ services:
       - migrations
       - postgres
       - redis
-    network_mode: host
 
   migrations:
     image: ghcr.io/kukymbr/goose-docker:3.21.1
@@ -19,8 +18,6 @@ services:
       - ./migrations:/migrations
     depends_on:
       - postgres
-    networks:
-      - bot
 
   redis:
     image: "redis:alpine"
@@ -31,8 +28,6 @@ services:
     volumes:
       - /var/lib/redis/dаta:/root/redis
       - /var/lib/redis/redis.conf:/usr/local/etc/redis/redis.conf
-    networks:
-      - bot
 
   postgres:
     image: "postgres"
@@ -42,13 +37,7 @@ services:
       - '5432:5432'
     volumes:
       - db:/var/lib/postgresql/data
-    networks:
-      - bot
 
 volumes:
   db:
     driver: local
-
-networks:
-  bot:
-    driver: "bridge"
