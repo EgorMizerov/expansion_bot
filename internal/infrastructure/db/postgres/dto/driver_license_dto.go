@@ -26,3 +26,14 @@ func ToDriverLicenseDTO(license entity.DriverLicense) DriverLicenseDTO {
 		Country:                 license.Country,
 	}
 }
+
+func (self *DriverLicenseDTO) ToDriverLicense() *entity.DriverLicense {
+	return &entity.DriverLicense{
+		ID:                      entity.DriverLicenseID(self.ID),
+		RegistrationCertificate: self.RegistrationCertificate,
+		DrivingExperience:       self.DrivingExperience,
+		IssueDate:               self.IssueDate,
+		ExpiryDate:              self.ExpiryDate,
+		Country:                 self.Country,
+	}
+}

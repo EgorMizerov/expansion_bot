@@ -6,6 +6,7 @@ import (
 	"github.com/EgorMizerov/expansion_bot/internal/common"
 	"github.com/EgorMizerov/expansion_bot/internal/domain/entity"
 	"github.com/google/uuid"
+	"github.com/samber/lo"
 )
 
 type DriverDTO struct {
@@ -51,4 +52,30 @@ func ToDriverDTO(driver *entity.Driver) DriverDTO {
 		dto.WorkRuleID = &driver.WorkRule.ID
 	}
 	return dto
+}
+
+func (self DriverDTO) ToDriver(license *entity.DriverLicense) *entity.Driver {
+	driver := &entity.Driver{
+		ID:             entity.DriverID(self.ID),
+		TelegramID:     nil,
+		JumpID:         entity.JumpID(self.JumpID),
+		FleetID:        entity.FleetID(self.FleetID),
+		FirstName:      self.FirstName,
+		MiddleName:     self.MiddleName,
+		LastName:       self.LastName,
+		City:           self.City,
+		IsSelfEmployed: self.IsSelfEmployed,
+		PhoneNuber:     entity.PhoneNumber(self.PhoneNumber),
+		DriverLicense:  *license,
+		AcceptCash:     self.AcceptCash,
+		CarID:          entity.CarID(self.CarID),
+		CreatedAt:      self.CreatedAt,
+	}
+
+	if !lo.IsNil(self.WorkRuleID) && !lo.IsNil(self.WorkRuleUpdatedAt) {
+		driver.WorkRule = common.Point(entity.WorkRuleFromID(*self.WorkRuleID))
+		driver.WorkRuleUpdatedAt = self.WorkRuleUpdatedAt
+	}
+
+	return driver
 }
