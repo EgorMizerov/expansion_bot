@@ -45,6 +45,7 @@ func (self *JumpWebhook) ServeHTTP(writer http.ResponseWriter, request *http.Req
 		if err != nil {
 			return
 		}
+	// TODO: Переделать с PUT на PATCH.
 	case ChangeApplicationAction:
 		application, err := self.registrationApplicationService.GetRegistrationApplication(request.Context(), entity.RegistrationApplicationID(callback.Item.ID))
 		if err != nil {

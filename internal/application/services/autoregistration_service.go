@@ -34,7 +34,6 @@ func (self *RegistrationApplicationService) SaveRegistrationApplication(ctx cont
 }
 
 func (self *RegistrationApplicationService) ConfirmRegistrationApplication(ctx context.Context, application *entity.RegistrationApplication) error {
-	// 3. Занести водителя в БД
 	jumpDriver, err := self.jumpClient.GetDriverByPhoneNumber(ctx, *application.PhoneNumber)
 	if err != nil {
 		return errors.Wrap(err, "failed to get driver from jump")
@@ -50,8 +49,8 @@ func (self *RegistrationApplicationService) ConfirmRegistrationApplication(ctx c
 		return errors.Wrap(err, "failed to create car")
 	}
 
-	driverLicense := entity.NewDriverLicense(*application.LicenseNumber, *application.LicenseTotalSinceDate, *application.LicenseIssueDate, *application.LicenseExpiryDate, *application.LicenseCountry)
-	driver := entity.NewDriver(entity.JumpID(jumpDriver.ID), entity.FleetID(fleetDriver.DriverProfile.ID), *application.FirstName, *application.LastName, application.MiddleName, *application.City, entity.PhoneNumber(*application.PhoneNumber), car.ID, driverLicense)
+	driver := entity.NewDriver(entity.JumpID(jumpDriver.ID), entity.FleetID(fleetDriver.DriverProfile.ID), *application.FirstName, *application.LastName, application.MiddleName, *application.City, entity.PhoneNumber(*application.PhoneNumber), car.ID,
+		entity.NewDriverLicense(*application.LicenseNumber, *application.LicenseTotalSinceDate, *application.LicenseIssueDate, *application.LicenseExpiryDate, *application.LicenseCountry))
 	err = self.driverRepository.CreateDriver(ctx, driver)
 	if err != nil {
 		return errors.Wrap(err, "failed to create driver")
