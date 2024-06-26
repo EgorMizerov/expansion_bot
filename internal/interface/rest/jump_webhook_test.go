@@ -25,7 +25,7 @@ type JumpWebhookTests struct {
 
 func (self *JumpWebhookTests) SetupTest() {
 	self.registrationApplicationService = mocks.NewRegistrationApplicationService(self.T())
-	self.handler = NewJumpWebhook(self.registrationApplicationService)
+	self.handler = NewJumpWebhook(self.registrationApplicationService, nil)
 }
 
 func (self *JumpWebhookTests) TestWebhookNewApplication() {

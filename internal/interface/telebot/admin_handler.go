@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/EgorMizerov/expansion_bot/internal/common"
+	"github.com/EgorMizerov/expansion_bot/internal/interface/telebot/middleware"
 	tele "github.com/EgorMizerov/telebot"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -41,11 +42,11 @@ func NewAdminHandler(bot *Bot, stateMachine FSM, driverService interfaces.Driver
 	}
 
 	bot.HandleStart(entity.AdminRole, admin.Menu)
-	bot.Handle(markup.AdminUsersRegistrationApplicationsButton.Text, admin.RegistrationApplications)
-	bot.Handle(markup.AdminUsersButton.Text, admin.DriversList)
-	bot.Handle(`rx:\+7\d{10}`, admin.GetDriverByPhone(false))
-	bot.Handle(&markup.DriverInfoShowCarInfoButton, admin.GetDriversCarInfo)
-	bot.Handle(&markup.DriverInfoShowCarInfoBackButton, admin.GetDriverByPhone(true))
+	bot.Handle(markup.AdminUsersRegistrationApplicationsButton.Text, admin.RegistrationApplications, middleware.AdminAuth())
+	bot.Handle(markup.AdminUsersButton.Text, admin.DriversList, middleware.AdminAuth())
+	bot.Handle(`rx:\+7\d{10}`, admin.GetDriverByPhone(false), middleware.AdminAuth())
+	bot.Handle(&markup.DriverInfoShowCarInfoButton, admin.GetDriversCarInfo, middleware.AdminAuth())
+	bot.Handle(&markup.DriverInfoShowCarInfoBackButton, admin.GetDriverByPhone(true), middleware.AdminAuth())
 
 	return admin
 }

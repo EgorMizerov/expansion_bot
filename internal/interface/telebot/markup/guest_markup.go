@@ -9,11 +9,20 @@ func SignUpMarkup() *ReplyMarkup {
 		ResizeKeyboard:  true,
 		OneTimeKeyboard: true,
 		ReplyKeyboard: [][]ReplyButton{
-			{{Text: "Отправить контакт", WebApp: &WebApp{
+			{{Text: "Заполнить анкету", WebApp: &WebApp{
 				URL: "https://my.jump.taxi/autoregistration/form/c26193",
 			}}},
 		},
 	}
 
 	return markup
+}
+
+func SendContactMarkup() *ReplyMarkup {
+	return &ReplyMarkup{
+		ResizeKeyboard: true,
+		ReplyKeyboard: [][]ReplyButton{
+			{{Text: "Поделиться контактам", Contact: true}},
+		},
+	}
 }
