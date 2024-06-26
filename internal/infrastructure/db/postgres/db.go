@@ -56,3 +56,16 @@ func (self *DB) rowWithError(err error) *sqlx.Row {
 
 	return rowDst
 }
+
+func StructListScan[T any](rows *sqlx.Rows) ([]T, error) {
+	var items []T
+	for rows.Next() {
+		var item T
+		err := rows.StructScan(&item)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	return items, nil
+}

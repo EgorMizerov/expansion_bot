@@ -25,7 +25,7 @@ type Driver struct {
 	MiddleName     *string
 	LastName       string
 	City           string
-	IsSelfEmployed *bool
+	IsSelfEmployed bool
 	PhoneNuber     PhoneNumber
 	DriverLicense  DriverLicense
 
@@ -52,15 +52,22 @@ func NewDriver(jumpID JumpID, fleetID FleetID, firstName string, lastName string
 		DriverLicense: driverLicense,
 		AcceptCash:    false,
 		CarID:         carID,
-		CreatedAt:     time.Now(),
+		CreatedAt:     time.Unix(time.Now().Unix(), 0),
 	}
 }
 
 func (self *Driver) Fullname() string {
-	return fmt.Sprintf("%s %s %s", self.LastName, self.FirstName, self.MiddleName)
+	if self.MiddleName != nil {
+		return fmt.Sprintf("%s %s %s", self.LastName, self.FirstName, *self.MiddleName)
+	}
+	return fmt.Sprintf("%s %s", self.LastName, self.FirstName)
 }
 
 type PhoneNumber string
+
+func (self PhoneNumber) String() string {
+	return string(self)
+}
 
 type CardNumber string
 

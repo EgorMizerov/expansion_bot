@@ -6,6 +6,13 @@ type WorkRule struct {
 	Name      string
 }
 
+func (self *WorkRule) StringPointer() *string {
+	if self == nil {
+		return nil
+	}
+	return &self.Name
+}
+
 var (
 	FixSelfEmployedWorkRule = WorkRule{
 		ID:        "3b669e4ffb4a4803a42adaf2fe1c777e",

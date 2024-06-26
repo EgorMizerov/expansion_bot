@@ -22,7 +22,7 @@ type DriverDTO struct {
 	AcceptCash        bool       `db:"accept_cash"`
 	WorkRuleID        *string    `db:"work_rule_id"`
 	WorkRuleUpdatedAt *time.Time `db:"work_rule_updated_at"`
-	IsSelfEmployed    *bool      `db:"is_self_employed"`
+	IsSelfEmployed    bool       `db:"is_self_employed"`
 	CarID             uuid.UUID  `db:"car_id"`
 	DriverLicenseID   uuid.UUID  `db:"driver_license_id"`
 	CreatedAt         time.Time  `db:"created_at"`

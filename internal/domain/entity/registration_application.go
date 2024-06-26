@@ -1,6 +1,9 @@
 package entity
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type RegistrationApplicationID int
 
@@ -36,6 +39,17 @@ func NewRegistrationApplication(id int, date time.Time) *RegistrationApplication
 		Status: "draft",
 		Date:   date,
 	}
+}
+
+func (self *RegistrationApplication) Fullname() string {
+	if self.MiddleName != nil {
+		return fmt.Sprintf("%s %s %s", *self.LastName, *self.FirstName, *self.MiddleName)
+	}
+	return fmt.Sprintf("%s %s", *self.LastName, *self.FirstName)
+}
+
+func (self *RegistrationApplication) Link() string {
+	return fmt.Sprintf("https://my.jump.taxi/autoregistration/list/%d", self.ID)
 }
 
 func (self *RegistrationApplication) SetPhone(phone string) {

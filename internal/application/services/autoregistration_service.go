@@ -29,6 +29,10 @@ func (self *RegistrationApplicationService) GetRegistrationApplication(ctx conte
 	return self.registrationApplicationRepository.GetRegistrationApplication(ctx, applicationID)
 }
 
+func (self *RegistrationApplicationService) GetRegistrationApplications(ctx context.Context) ([]*entity.RegistrationApplication, error) {
+	return self.registrationApplicationRepository.GetRegistrationApplications(ctx)
+}
+
 func (self *RegistrationApplicationService) SaveRegistrationApplication(ctx context.Context, application *entity.RegistrationApplication) error {
 	return self.registrationApplicationRepository.SaveRegistrationApplication(ctx, application)
 }

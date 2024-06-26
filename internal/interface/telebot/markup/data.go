@@ -10,8 +10,15 @@ import (
 )
 
 const (
-	MainMenuData  = "main_menu"
-	AdminMenuData = "admin_menu"
+	AdminMenuData                       = "admin"
+	DriverInfoEditData                  = "admin:driver_info:edit"
+	DriverInfoShowCarInfoBackData       = "admin:driver_info:car_info:back"
+	DriverInfoShowCarInfoData           = "admin:driver_info:car_info"
+	DriverInfoShowDriverLicenseInfoData = "admin:driver_info:driver_license_info"
+)
+
+const (
+	MainMenuData = "main_menu"
 
 	InformationMenuData       = "information_main_menu" // Информация о парке
 	ProfileManagementMenuData = "profile_management"    // Управление профилем

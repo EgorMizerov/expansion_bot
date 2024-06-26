@@ -4,12 +4,13 @@ go 1.22.3
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
-	github.com/EgorMizerov/telebot v1.0.1
+	github.com/EgorMizerov/telebot v1.0.4
 	github.com/Masterminds/squirrel v1.5.4
 	github.com/caarlos0/env/v11 v11.1.0
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx v3.6.2+incompatible
+	github.com/jarcoal/httpmock v1.3.1
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/joho/godotenv v1.5.1
 	github.com/mitchellh/mapstructure v1.5.0
@@ -47,7 +48,6 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/jackc/fake v0.0.0-20150926172116-812a484cc733 // indirect
-	github.com/jarcoal/httpmock v1.3.1 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/klauspost/compress v1.16.0 // indirect
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect

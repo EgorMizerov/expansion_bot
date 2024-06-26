@@ -2,13 +2,17 @@ package telebot
 
 import (
 	"context"
+	"fmt"
+	"time"
 
+	"github.com/EgorMizerov/expansion_bot/internal/common"
 	tele "github.com/EgorMizerov/telebot"
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	"github.com/samber/lo"
 
 	"github.com/EgorMizerov/expansion_bot/internal/application/interfaces"
 	"github.com/EgorMizerov/expansion_bot/internal/domain/entity"
-	hcontext "github.com/EgorMizerov/expansion_bot/internal/interface/telebot/context"
 	"github.com/EgorMizerov/expansion_bot/internal/interface/telebot/markup"
 	"github.com/EgorMizerov/expansion_bot/internal/interface/telebot/template"
 )
@@ -22,727 +26,124 @@ type FSM interface {
 }
 
 type AdminHandler struct {
-	fsm          FSM
-	adminService interfaces.AdminService
+	fsm                            FSM
+	adminService                   interfaces.AdminService
+	driverService                  interfaces.DriverService
+	registrationApplicationService interfaces.RegistrationApplicationService
 }
 
-func NewAdminHandler(bot *Bot, stateMachine FSM, adminService interfaces.AdminService) *AdminHandler {
+func NewAdminHandler(bot *Bot, stateMachine FSM, driverService interfaces.DriverService, adminService interfaces.AdminService, registrationApplicationService interfaces.RegistrationApplicationService) *AdminHandler {
 	admin := &AdminHandler{
-		fsm:          stateMachine,
-		adminService: adminService,
+		fsm:                            stateMachine,
+		adminService:                   adminService,
+		driverService:                  driverService,
+		registrationApplicationService: registrationApplicationService,
 	}
 
 	bot.HandleStart(entity.AdminRole, admin.Menu)
-	bot.Handle(&markup.AdminMenuButton, admin.Menu)
-	//bot.Handle(&markup.CreateDriverButton, admin.CreateDriver)
-	//bot.Handle(&markup.CreateDriverConfirmButton, admin.CreateDriverConfirm)
-	//bot.Handle(&markup.CreateDriverAbortButton, admin.CreateDriverAbort)
-	//bot.Handle(&markup.CreateDriverInputIDButton, admin.CreateDriverInputUserID)
-	//bot.Handle(&markup.CreateDriverInputFullnameButton, admin.CreateDriverInputFullname)
-	//bot.Handle(&markup.CreateDriverInputPhoneNumberButton, admin.CreateDriverInputPhoneNumber)
-	//bot.Handle(&markup.CreateDriverInputAddressButton, admin.CreateDriverInputAddress)
-	//bot.Handle(&markup.CreateDriverInputIsSelfEmployedButton, admin.CreateDriverInputIsSelfEmployed)
-	//bot.Handle(&markup.CreateDriverInputWorkRuleButton, admin.CreateDriverInputTariff)
-	//bot.Handle(&markup.CreateDriverInputCardNumberButton, admin.CreateDriverInputCardNumber)
-	//bot.Handle(&markup.CreateDriverInputDrivingExperienceButton, admin.CreateDriverInputDrivingExperience)
-	//bot.Handle(&markup.CreateDriverInputRegistrationCertificateButton, admin.CreateDriverInputRegistrationCertificate)
-	//bot.Handle(&markup.CreateDriverInputLicenseCountryButton, admin.CreateDriverInputLicenseCountry)
-	//bot.Handle(&markup.CreateDriverInputLicenseIssueDateButton, admin.CreateDriverInputLicenseIssueDate)
-	//bot.Handle(&markup.CreateDriverInputLicenseExpiryDateButton, admin.CreateDriverInputLicenseExpiryDate)
-	//bot.Handle(&markup.CreateDriverInputCarBrandButton, admin.CreateDriverInputCarBrand)
-	//bot.Handle(&markup.CreateDriverInputCarModelButton, admin.CreateDriverInputCarModel)
-	//bot.Handle(&markup.CreateDriverInputCarColorButton, admin.CreateDriverInputCarColor)
-	//bot.Handle(&markup.CreateDriverInputCarYearButton, admin.CreateDriverInputCarYear)
-	//bot.Handle(&markup.CreateDriverInputCarVINButton, admin.CreateDriverInputCarVIN)
-	//bot.Handle(&markup.CreateDriverInputCarLicensePlateNumberButton, admin.CreateDriverInputLicensePlateNumber)
-	//bot.Handle(&markup.CreateDriverInputReferralKeyButton, admin.CreateDriverInputReferralKey)
-
-	//bot.HandleState(entity.CreateDriver_ReceiveUserID, admin.CreateDriverReceiveUserID)
-	//bot.HandleState(entity.CreateDriver_ReceiveFullanme, admin.CreateDriverReceiveFullname)
-	//bot.HandleState(entity.CreateDriver_ReceivePhoneNumber, admin.CreateDriverReceivePhoneNumber)
-	//bot.HandleState(entity.CreateDriver_ReceiveAddress, admin.CreateDriverReceiveAddress)
-	//bot.HandleState(entity.CreateDriver_ReceiveIsSelfEmployed, admin.CreateDriverReceiveIsSelfEmployed)
-	//bot.HandleState(entity.CreateDriver_ReceiveTariff, admin.CreateDriverReceiveTariff)
-	//bot.HandleState(entity.CreateDriver_ReceiveCardNumber, admin.CreateDriverReceiveCardNumber)
-	//bot.HandleState(entity.CreateDriver_ReceiveDrivingExperience, admin.CreateDriverReceiveDrivingExperience)
-	//bot.HandleState(entity.CreateDriver_ReceiveRegistrationCertificate, admin.CreateDriverReceiveRegistrationCertificate)
-	//bot.HandleState(entity.CreateDriver_ReceiveLicenseCountry, admin.CreateDriverReceiveLicenseCountry)
-	//bot.HandleState(entity.CreateDriver_ReceiveLicenseIssueDate, admin.CreateDriverReceiveLicenseIssueDate)
-	//bot.HandleState(entity.CreateDriver_ReceiveLicenseExpiryDate, admin.CreateDriverReceiveLicenseExpiryDate)
-	//bot.HandleState(entity.CreateDriver_ReceiveCarBrand, admin.CreateDriverReceiveCarBrand)
-	//bot.HandleState(entity.CreateDriver_ReceiveCarModel, admin.CreateDriverReceiveCarModel)
-	//bot.HandleState(entity.CreateDriver_ReceiveCarColor, admin.CreateDriverReceiveCarColor)
-	//bot.HandleState(entity.CreateDriver_ReceiveCarYear, admin.CreateDriverReceiveCarYear)
-	//bot.HandleState(entity.CreateDriver_ReceiveCarVIN, admin.CreateDriverReceiveCarVIN)
-	//bot.HandleState(entity.CreateDriver_ReceiveLicensePlateNumber, admin.CreateDriverReceiveLicensePlateNumber)
-	//bot.HandleState(entity.CreateDriver_ReceiveReferralKey, admin.CreateDriverReceiveReferralKey)
+	bot.Handle(markup.AdminUsersRegistrationApplicationsButton.Text, admin.RegistrationApplications)
+	bot.Handle(markup.AdminUsersButton.Text, admin.DriversList)
+	bot.Handle(`rx:\+7\d{10}`, admin.GetDriverByPhone(false))
+	bot.Handle(&markup.DriverInfoShowCarInfoButton, admin.GetDriversCarInfo)
+	bot.Handle(&markup.DriverInfoShowCarInfoBackButton, admin.GetDriverByPhone(true))
 
 	return admin
 }
 
 func (self *AdminHandler) Menu(ctx tele.Context) error {
-	return ctx.EditOrSend("Меню администратора", markup.MenuMarkup())
+	return ctx.EditOrSend("Меню администратора", markup.AdminMenuMarkup())
 }
 
-//func (self *AdminHandler) CreateDriver(ctx tele.Context) error {
-//	var driverRegistrationData = template.DriverRegistrationData{Message: ctx.Message()}
-//	err := self.fsm.SaveRegistrationData(context.TODO(), driverRegistrationData)
-//	if err != nil {
-//		return handleError(ctx, errors.Wrap(err, "failed to save driver registration data"))
-//	}
-//
-//	return ctx.EditOrSend(
-//		template.ParseTemplate(template.DriverRegistrationTemplate, driverRegistrationData),
-//		markup.CreateDriverMarkup("Ввести идентификатор", markup.Admin_CreateDriver_InputIDData),
-//	)
-//}
-//
-//func (self *AdminHandler) CreateDriverInputUserID(ctx tele.Context) error {
-//	self.fsm.SetState(ctx.Sender().ID, entity.CreateDriver_ReceiveUserID)
-//	return ctx.EditOrSend("Введите идентификатор пользователя")
-//}
-//
-//func (self *AdminHandler) CreateDriverReceiveUserID(ctx tele.Context) error {
-//	defer ctx.Delete()
-//
-//	driverRegistrationData, err := self.fsm.GetRegistrationData(context.TODO())
-//	if err != nil {
-//		return handleError(ctx, errors.Wrap(err, "failed to get driver registration data"))
-//	}
-//
-//	userID, err := strconv.Atoi(ctx.Message().Text)
-//	if err != nil {
-//		return handleError(ctx, errors.Wrap(err, "failed to convert message text to int"))
-//	}
-//	driverRegistrationData.UserID = userID
-//
-//	err = self.fsm.SaveRegistrationData(context.TODO(), driverRegistrationData)
-//	if err != nil {
-//		return handleError(ctx, errors.Wrap(err, "failed to save driver registration data"))
-//	}
-//
-//	_, err = ctx.Bot().Edit(driverRegistrationData.Message,
-//		template.ParseTemplate(template.DriverRegistrationTemplate, driverRegistrationData),
-//		markup.CreateDriverMarkup("Ввести ФИО", markup.Admin_CreateDriver_InputFullnameData),
-//	)
-//	return err
-//}
-//
-//func (self *AdminHandler) CreateDriverInputFullname(ctx tele.Context) error {
-//	self.fsm.SetState(ctx.Sender().ID, entity.CreateDriver_ReceiveFullanme)
-//	return ctx.EditOrSend("Введите ФИО пользователя")
-//}
-//
-//func (self *AdminHandler) CreateDriverReceiveFullname(ctx tele.Context) error {
-//	defer ctx.Delete()
-//
-//	driverRegistrationData, err := self.fsm.GetRegistrationData(context.TODO())
-//	if err != nil {
-//		return handleError(ctx, errors.Wrap(err, "failed to get driver registration data"))
-//	}
-//
-//	fullnameParts := strings.Split(ctx.Message().Text, " ")
-//	if len(fullnameParts) < 3 {
-//		_, err = ctx.Bot().Edit(driverRegistrationData.Message,
-//			template.ParseTemplate(template.DriverRegistrationTemplate, driverRegistrationData),
-//			markup.CreateDriverMarkup("Ввести ФИО", markup.Admin_CreateDriver_InputFullnameData),
-//		)
-//		return err
-//	}
-//	driverRegistrationData.FullName = ctx.Message().Text
-//
-//	err = self.fsm.SaveRegistrationData(context.TODO(), driverRegistrationData)
-//	if err != nil {
-//		return handleError(ctx, errors.Wrap(err, "failed to save driver registration data"))
-//	}
-//
-//	_, err = ctx.Bot().Edit(driverRegistrationData.Message,
-//		template.ParseTemplate(template.DriverRegistrationTemplate, driverRegistrationData),
-//		markup.CreateDriverMarkup("Ввести номер телефона", markup.Admin_CreateDriver_InputPhoneNumberData),
-//	)
-//	return err
-//}
-//
-//func (self *AdminHandler) CreateDriverInputPhoneNumber(ctx tele.Context) error {
-//	self.fsm.SetState(ctx.Sender().ID, entity.CreateDriver_ReceivePhoneNumber)
-//	return ctx.EditOrSend("Введите номер телефона пользователя")
-//}
-//
-//func (self *AdminHandler) CreateDriverReceivePhoneNumber(ctx tele.Context) error {
-//	defer ctx.Delete()
-//
-//	driverRegistrationData, err := self.fsm.GetRegistrationData(context.TODO())
-//	if err != nil {
-//		return handleError(ctx, errors.Wrap(err, "failed to get driver registration data"))
-//	}
-//
-//	isPhone, err := regexp.MatchString(`^\+7\d{10}`, ctx.Message().Text)
-//	if err != nil || !isPhone {
-//		_, err = ctx.Bot().Edit(driverRegistrationData.Message,
-//			template.ParseTemplate(template.DriverRegistrationTemplate, driverRegistrationData),
-//			markup.CreateDriverMarkup("Ввести номер телефона", markup.Admin_CreateDriver_InputPhoneNumberData),
-//		)
-//		return err
-//	}
-//	driverRegistrationData.PhoneNumber = ctx.Message().Text
-//
-//	err = self.fsm.SaveRegistrationData(context.TODO(), driverRegistrationData)
-//	if err != nil {
-//		return handleError(ctx, errors.Wrap(err, "failed to save driver registration data"))
-//	}
-//
-//	_, err = ctx.Bot().Edit(driverRegistrationData.Message,
-//		template.ParseTemplate(template.DriverRegistrationTemplate, driverRegistrationData),
-//		markup.CreateDriverMarkup("Ввести адрес проживания", markup.Admin_CreateDriver_InputAddressData),
-//	)
-//	return err
-//}
-//
-//func (self *AdminHandler) CreateDriverInputAddress(ctx tele.Context) error {
-//	self.fsm.SetState(ctx.Sender().ID, entity.CreateDriver_ReceiveAddress)
-//	return ctx.EditOrSend("Введите адрес проживания пользователя")
-//}
-//
-//func (self *AdminHandler) CreateDriverReceiveAddress(ctx tele.Context) error {
-//	defer ctx.Delete()
-//
-//	driverRegistrationData, err := self.fsm.GetRegistrationData(context.TODO())
-//	if err != nil {
-//		return handleError(ctx, errors.Wrap(err, "failed to get driver registration data"))
-//	}
-//
-//	driverRegistrationData.Address = ctx.Message().Text
-//
-//	err = self.fsm.SaveRegistrationData(context.TODO(), driverRegistrationData)
-//	if err != nil {
-//		return handleError(ctx, errors.Wrap(err, "failed to save driver registration data"))
-//	}
-//
-//	_, err = ctx.Bot().Edit(driverRegistrationData.Message,
-//		template.ParseTemplate(template.DriverRegistrationTemplate, driverRegistrationData),
-//		markup.CreateDriverMarkup("Ввести статус самозанятасти", markup.Admin_CreateDriver_InputIsSelfEmployedData),
-//	)
-//	return err
-//}
-//
-//func (self *AdminHandler) CreateDriverInputIsSelfEmployed(ctx tele.Context) error {
-//	self.fsm.SetState(ctx.Sender().ID, entity.CreateDriver_ReceiveIsSelfEmployed)
-//	return ctx.EditOrSend("Введите статус самозанятасти пользователя (`Да` или `Нет`)")
-//}
-//
-//func (self *AdminHandler) CreateDriverReceiveIsSelfEmployed(ctx tele.Context) error {
-//	defer ctx.Delete()
-//
-//	driverRegistrationData, err := self.fsm.GetRegistrationData(context.TODO())
-//	if err != nil {
-//		return handleError(ctx, errors.Wrap(err, "failed to get driver registration data"))
-//	}
-//
-//	if strings.ToLower(ctx.Message().Text) == "да" {
-//		driverRegistrationData.IsSelfEmployed = true
-//	} else {
-//		driverRegistrationData.IsSelfEmployed = false
-//	}
-//
-//	err = self.fsm.SaveRegistrationData(context.TODO(), driverRegistrationData)
-//	if err != nil {
-//		return handleError(ctx, errors.Wrap(err, "failed to save driver registration data"))
-//	}
-//
-//	_, err = ctx.Bot().Edit(driverRegistrationData.Message,
-//		template.ParseTemplate(template.DriverRegistrationTemplate, driverRegistrationData),
-//		markup.CreateDriverMarkup("Выбрать тариф", markup.Admin_CreateDriver_InputTariffData),
-//	)
-//	return err
-//}
-//
-//func (self *AdminHandler) CreateDriverInputTariff(ctx tele.Context) error {
-//	self.fsm.SetState(ctx.Sender().ID, entity.CreateDriver_ReceiveTariff)
-//	return ctx.EditOrSend("Выберите тариф (`процент`, `фикс/заказ`, `фикс/день`)", tele.ModeMarkdown)
-//}
-//
-//func (self *AdminHandler) CreateDriverReceiveTariff(ctx tele.Context) error {
-//	defer ctx.Delete()
-//
-//	driverRegistrationData, err := self.fsm.GetRegistrationData(context.TODO())
-//	if err != nil {
-//		return handleError(ctx, errors.Wrap(err, "failed to get driver registration data"))
-//	}
-//
-//	if strings.ToLower(ctx.Message().Text) == "процент" && driverRegistrationData.IsSelfEmployed {
-//		driverRegistrationData.WorkRule = entity.PercentSelfEmployedWorkRule
-//	} else if strings.ToLower(ctx.Message().Text) == "процент" && !driverRegistrationData.IsSelfEmployed {
-//		driverRegistrationData.WorkRule = entity.PercentWorkRule
-//	} else if strings.ToLower(ctx.Message().Text) == "фикс/заказ" && !driverRegistrationData.IsSelfEmployed {
-//		driverRegistrationData.WorkRule = entity.FixWorkRule
-//	} else if strings.ToLower(ctx.Message().Text) == "фикс/заказ" && driverRegistrationData.IsSelfEmployed {
-//		driverRegistrationData.WorkRule = entity.FixSelfEmployedWorkRule
-//	} else if strings.ToLower(ctx.Message().Text) == "фикс/день" && driverRegistrationData.IsSelfEmployed {
-//		driverRegistrationData.WorkRule = entity.PerDayWorkRule
-//	} else {
-//		_, err = ctx.Bot().Edit(driverRegistrationData.Message,
-//			template.ParseTemplate(template.DriverRegistrationTemplate, driverRegistrationData),
-//			markup.CreateDriverMarkup("Выбрать тариф", markup.Admin_CreateDriver_InputTariffData),
-//		)
-//		return err
-//	}
-//
-//	err = self.fsm.SaveRegistrationData(context.TODO(), driverRegistrationData)
-//	if err != nil {
-//		return handleError(ctx, errors.Wrap(err, "failed to save driver registration data"))
-//	}
-//
-//	_, err = ctx.Bot().Edit(driverRegistrationData.Message,
-//		template.ParseTemplate(template.DriverRegistrationTemplate, driverRegistrationData),
-//		markup.CreateDriverMarkup("Ввести номер карты", markup.Admin_CreateDriver_InputCardNumberData),
-//	)
-//	return err
-//}
-//
-//func (self *AdminHandler) CreateDriverInputCardNumber(ctx tele.Context) error {
-//	self.fsm.SetState(ctx.Sender().ID, entity.CreateDriver_ReceiveCardNumber)
-//	return ctx.EditOrSend("Введите номер карты пользователя")
-//}
-//
-//func (self *AdminHandler) CreateDriverReceiveCardNumber(ctx tele.Context) error {
-//	defer ctx.Delete()
-//
-//	driverRegistrationData, err := self.fsm.GetRegistrationData(context.TODO())
-//	if err != nil {
-//		return handleError(ctx, errors.Wrap(err, "failed to get driver registration data"))
-//	}
-//
-//	cardNumber := strings.ReplaceAll(ctx.Message().Text, " ", "")
-//	isCardNumber, err := regexp.MatchString(`^\d{16}`, cardNumber)
-//	if err != nil || !isCardNumber {
-//		_, err = ctx.Bot().Edit(driverRegistrationData.Message,
-//			template.ParseTemplate(template.DriverRegistrationTemplate, driverRegistrationData),
-//			markup.CreateDriverMarkup("Ввести номер карты", markup.Admin_CreateDriver_InputCardNumberData),
-//		)
-//		return err
-//	}
-//	driverRegistrationData.CardNumber = template.CardNumber(cardNumber)
-//
-//	err = self.fsm.SaveRegistrationData(context.TODO(), driverRegistrationData)
-//	if err != nil {
-//		return handleError(ctx, errors.Wrap(err, "failed to save driver registration data"))
-//	}
-//
-//	_, err = ctx.Bot().Edit(driverRegistrationData.Message,
-//		template.ParseTemplate(template.DriverRegistrationTemplate, driverRegistrationData),
-//		markup.CreateDriverMarkup("Ввести водительский стаж", markup.Admin_CreateDriver_InputDrivingExperienceData),
-//	)
-//	return err
-//}
-//
-//func (self *AdminHandler) CreateDriverInputDrivingExperience(ctx tele.Context) error {
-//	self.fsm.SetState(ctx.Sender().ID, entity.CreateDriver_ReceiveDrivingExperience)
-//	return ctx.EditOrSend("Введите водительский стаж с пользователя (yyyy-mm-dd)")
-//}
-//
-//func (self *AdminHandler) CreateDriverReceiveDrivingExperience(ctx tele.Context) error {
-//	defer ctx.Delete()
-//
-//	driverRegistrationData, err := self.fsm.GetRegistrationData(context.TODO())
-//	if err != nil {
-//		return handleError(ctx, errors.Wrap(err, "failed to get driver registration data"))
-//	}
-//
-//	drivingExperience, err := time.Parse(time.DateOnly, ctx.Message().Text)
-//	if err != nil {
-//		_, err = ctx.Bot().Edit(driverRegistrationData.Message,
-//			template.ParseTemplate(template.DriverRegistrationTemplate, driverRegistrationData),
-//			markup.CreateDriverMarkup("Ввести водительский стаж", markup.Admin_CreateDriver_InputDrivingExperienceData),
-//		)
-//		return err
-//	}
-//	driverRegistrationData.DrivingExperience = drivingExperience
-//
-//	err = self.fsm.SaveRegistrationData(context.TODO(), driverRegistrationData)
-//	if err != nil {
-//		return handleError(ctx, errors.Wrap(err, "failed to save driver registration data"))
-//	}
-//
-//	_, err = ctx.Bot().Edit(driverRegistrationData.Message,
-//		template.ParseTemplate(template.DriverRegistrationTemplate, driverRegistrationData),
-//		markup.CreateDriverMarkup("Ввести серию и номер ВУ", markup.Admin_CreateDriver_InputRegistrationCerteficateData),
-//	)
-//	return err
-//}
-//
-//func (self *AdminHandler) CreateDriverInputRegistrationCertificate(ctx tele.Context) error {
-//	self.fsm.SetState(ctx.Sender().ID, entity.CreateDriver_ReceiveRegistrationCertificate)
-//	return ctx.EditOrSend("Введите серию и номер водительского удостоверения (xx xx xxxxxx)")
-//}
-//
-//func (self *AdminHandler) CreateDriverReceiveRegistrationCertificate(ctx tele.Context) error {
-//	defer ctx.Delete()
-//
-//	driverRegistrationData, err := self.fsm.GetRegistrationData(context.TODO())
-//	if err != nil {
-//		return handleError(ctx, errors.Wrap(err, "failed to get driver registration data"))
-//	}
-//
-//	ok, err := regexp.MatchString(`\d{2} \d{2} \d{6}`, ctx.Message().Text)
-//	if err != nil || !ok {
-//		_, err = ctx.Bot().Edit(driverRegistrationData.Message,
-//			template.ParseTemplate(template.DriverRegistrationTemplate, driverRegistrationData),
-//			markup.CreateDriverMarkup("Ввести серию и номер ВУ", markup.Admin_CreateDriver_InputRegistrationCerteficateData),
-//		)
-//		return err
-//	}
-//	driverRegistrationData.RegistrationCertificate = ctx.Message().Text
-//
-//	err = self.fsm.SaveRegistrationData(context.TODO(), driverRegistrationData)
-//	if err != nil {
-//		return handleError(ctx, errors.Wrap(err, "failed to save driver registration data"))
-//	}
-//
-//	_, err = ctx.Bot().Edit(driverRegistrationData.Message,
-//		template.ParseTemplate(template.DriverRegistrationTemplate, driverRegistrationData),
-//		markup.CreateDriverMarkup("Ввести страну выдачи ВУ", markup.Admin_CreateDriver_InputLicenseCountry),
-//	)
-//	return err
-//}
-//
-//func (self *AdminHandler) CreateDriverInputLicenseCountry(ctx tele.Context) error {
-//	self.fsm.SetState(ctx.Sender().ID, entity.CreateDriver_ReceiveLicenseCountry)
-//	return ctx.EditOrSend("Введите стару выдачи водительского удостоверения")
-//}
-//
-//func (self *AdminHandler) CreateDriverReceiveLicenseCountry(ctx tele.Context) error {
-//	defer ctx.Delete()
-//
-//	driverRegistrationData, err := self.fsm.GetRegistrationData(context.TODO())
-//	if err != nil {
-//		return handleError(ctx, errors.Wrap(err, "failed to get driver registration data"))
-//	}
-//
-//	// TODO: only rus
-//	driverRegistrationData.LicenseCountry = "rus"
-//
-//	err = self.fsm.SaveRegistrationData(context.TODO(), driverRegistrationData)
-//	if err != nil {
-//		return handleError(ctx, errors.Wrap(err, "failed to save driver registration data"))
-//	}
-//
-//	_, err = ctx.Bot().Edit(driverRegistrationData.Message,
-//		template.ParseTemplate(template.DriverRegistrationTemplate, driverRegistrationData),
-//		markup.CreateDriverMarkup("Ввести дату выдачи ВУ", markup.Admin_CreateDriver_InputLicenseIssueDate),
-//	)
-//	return err
-//}
-//
-//func (self *AdminHandler) CreateDriverInputLicenseIssueDate(ctx tele.Context) error {
-//	self.fsm.SetState(ctx.Sender().ID, entity.CreateDriver_ReceiveLicenseIssueDate)
-//	return ctx.EditOrSend("Введите дату выдачи водительского удостоверения (yyyy-mm-dd)")
-//}
-//
-//func (self *AdminHandler) CreateDriverReceiveLicenseIssueDate(ctx tele.Context) error {
-//	defer ctx.Delete()
-//
-//	driverRegistrationData, err := self.fsm.GetRegistrationData(context.TODO())
-//	if err != nil {
-//		return handleError(ctx, errors.Wrap(err, "failed to get driver registration data"))
-//	}
-//
-//	licenseIssueDate, err := time.Parse(time.DateOnly, ctx.Message().Text)
-//	if err != nil {
-//		_, err = ctx.Bot().Edit(driverRegistrationData.Message,
-//			template.ParseTemplate(template.DriverRegistrationTemplate, driverRegistrationData),
-//			markup.CreateDriverMarkup("Ввести дату выдачи ВУ", markup.Admin_CreateDriver_InputLicenseIssueDate),
-//		)
-//		return err
-//	}
-//	driverRegistrationData.LicenseIssueDate = licenseIssueDate
-//
-//	err = self.fsm.SaveRegistrationData(context.TODO(), driverRegistrationData)
-//	if err != nil {
-//		return handleError(ctx, errors.Wrap(err, "failed to save driver registration data"))
-//	}
-//
-//	_, err = ctx.Bot().Edit(driverRegistrationData.Message,
-//		template.ParseTemplate(template.DriverRegistrationTemplate, driverRegistrationData),
-//		markup.CreateDriverMarkup("Ввести дату окончания действия ВУ", markup.Admin_CreateDriver_InputLicenseExpiryDate),
-//	)
-//	return err
-//}
-//
-//func (self *AdminHandler) CreateDriverInputLicenseExpiryDate(ctx tele.Context) error {
-//	self.fsm.SetState(ctx.Sender().ID, entity.CreateDriver_ReceiveLicenseExpiryDate)
-//	return ctx.EditOrSend("Введите дату окончания действия водительского удостоверения (yyyy-mm-dd)")
-//}
-//
-//func (self *AdminHandler) CreateDriverReceiveLicenseExpiryDate(ctx tele.Context) error {
-//	defer ctx.Delete()
-//
-//	driverRegistrationData, err := self.fsm.GetRegistrationData(context.TODO())
-//	if err != nil {
-//		return handleError(ctx, errors.Wrap(err, "failed to get driver registration data"))
-//	}
-//
-//	licenseExpiryDate, err := time.Parse(time.DateOnly, ctx.Message().Text)
-//	if err != nil {
-//		_, err = ctx.Bot().Edit(driverRegistrationData.Message,
-//			template.ParseTemplate(template.DriverRegistrationTemplate, driverRegistrationData),
-//			markup.CreateDriverMarkup("Ввести дату окончания действия ВУ", markup.Admin_CreateDriver_InputLicenseExpiryDate),
-//		)
-//		return err
-//	}
-//	driverRegistrationData.LicenseExpiryDate = licenseExpiryDate
-//
-//	err = self.fsm.SaveRegistrationData(context.TODO(), driverRegistrationData)
-//	if err != nil {
-//		return handleError(ctx, errors.Wrap(err, "failed to save driver registration data"))
-//	}
-//
-//	_, err = ctx.Bot().Edit(driverRegistrationData.Message,
-//		template.ParseTemplate(template.DriverRegistrationTemplate, driverRegistrationData),
-//		markup.CreateDriverMarkup("Ввести марку автомобиля", markup.Admin_CreateDriver_InputCarBrand),
-//	)
-//	return err
-//}
-//
-//func (self *AdminHandler) CreateDriverInputCarBrand(ctx tele.Context) error {
-//	self.fsm.SetState(ctx.Sender().ID, entity.CreateDriver_ReceiveCarBrand)
-//	return ctx.EditOrSend("Введите марку автомобиля")
-//}
-//
-//func (self *AdminHandler) CreateDriverReceiveCarBrand(ctx tele.Context) error {
-//	defer ctx.Delete()
-//
-//	driverRegistrationData, err := self.fsm.GetRegistrationData(context.TODO())
-//	if err != nil {
-//		return handleError(ctx, errors.Wrap(err, "failed to get driver registration data"))
-//	}
-//
-//	driverRegistrationData.CarBrand = ctx.Message().Text
-//
-//	err = self.fsm.SaveRegistrationData(context.TODO(), driverRegistrationData)
-//	if err != nil {
-//		return handleError(ctx, errors.Wrap(err, "failed to save driver registration data"))
-//	}
-//
-//	_, err = ctx.Bot().Edit(driverRegistrationData.Message,
-//		template.ParseTemplate(template.DriverRegistrationTemplate, driverRegistrationData),
-//		markup.CreateDriverMarkup("Ввести модель автомобиля", markup.Admin_CreateDriver_InputCarModel),
-//	)
-//	return err
-//}
-//
-//func (self *AdminHandler) CreateDriverInputCarModel(ctx tele.Context) error {
-//	self.fsm.SetState(ctx.Sender().ID, entity.CreateDriver_ReceiveCarModel)
-//	return ctx.EditOrSend("Введите модель автомобиля")
-//}
-//
-//func (self *AdminHandler) CreateDriverReceiveCarModel(ctx tele.Context) error {
-//	defer ctx.Delete()
-//
-//	driverRegistrationData, err := self.fsm.GetRegistrationData(context.TODO())
-//	if err != nil {
-//		return handleError(ctx, errors.Wrap(err, "failed to get driver registration data"))
-//	}
-//
-//	driverRegistrationData.CarModel = ctx.Message().Text
-//
-//	err = self.fsm.SaveRegistrationData(context.TODO(), driverRegistrationData)
-//	if err != nil {
-//		return handleError(ctx, errors.Wrap(err, "failed to save driver registration data"))
-//	}
-//
-//	_, err = ctx.Bot().Edit(driverRegistrationData.Message,
-//		template.ParseTemplate(template.DriverRegistrationTemplate, driverRegistrationData),
-//		markup.CreateDriverMarkup("Выбрать цвет автомобиля", markup.Admin_CreateDriver_InputCarColor),
-//	)
-//	return err
-//}
-//
-//func (self *AdminHandler) CreateDriverInputCarColor(ctx tele.Context) error {
-//	self.fsm.SetState(ctx.Sender().ID, entity.CreateDriver_ReceiveCarColor)
-//	return ctx.EditOrSend("Выберите цвет автомобиля (`Белый`, `Желтый`, `Бежевый`, `Черный`, `Голубой`, `Серый`, `Красный`, `Оранжевый`, `Синий`, `Зеленый`, `Коричневый`, `Фиолетовый`, `Розовый`)")
-//}
-//
-//func (self *AdminHandler) CreateDriverReceiveCarColor(ctx tele.Context) error {
-//	defer ctx.Delete()
-//
-//	driverRegistrationData, err := self.fsm.GetRegistrationData(context.TODO())
-//	if err != nil {
-//		return handleError(ctx, errors.Wrap(err, "failed to get driver registration data"))
-//	}
-//
-//	colors := strings.Split("Белый, Желтый, Бежевый, Черный, Голубой, Серый, Красный, Оранжевый, Синий, Зеленый, Коричневый, Фиолетовый, Розовый", ", ")
-//	if !slices.Contains(colors, ctx.Message().Text) {
-//		_, err = ctx.Bot().Edit(driverRegistrationData.Message,
-//			template.ParseTemplate(template.DriverRegistrationTemplate, driverRegistrationData),
-//			markup.CreateDriverMarkup("Выбрать цвет автомобиля", markup.Admin_CreateDriver_InputCarColor),
-//		)
-//		return err
-//	}
-//	driverRegistrationData.CarColor = ctx.Message().Text
-//
-//	err = self.fsm.SaveRegistrationData(context.TODO(), driverRegistrationData)
-//	if err != nil {
-//		return handleError(ctx, errors.Wrap(err, "failed to save driver registration data"))
-//	}
-//
-//	_, err = ctx.Bot().Edit(driverRegistrationData.Message,
-//		template.ParseTemplate(template.DriverRegistrationTemplate, driverRegistrationData),
-//		markup.CreateDriverMarkup("Ввести год выпуска автомобиля", markup.Admin_CreateDriver_InputCarYear),
-//	)
-//	return err
-//}
-//
-//func (self *AdminHandler) CreateDriverInputCarYear(ctx tele.Context) error {
-//	self.fsm.SetState(ctx.Sender().ID, entity.CreateDriver_ReceiveCarYear)
-//	return ctx.EditOrSend("Введите год выпуска автомобиля (yyyy)")
-//}
-//
-//func (self *AdminHandler) CreateDriverReceiveCarYear(ctx tele.Context) error {
-//	defer ctx.Delete()
-//
-//	driverRegistrationData, err := self.fsm.GetRegistrationData(context.TODO())
-//	if err != nil {
-//		return handleError(ctx, errors.Wrap(err, "failed to get driver registration data"))
-//	}
-//
-//	carYear, err := time.Parse("2006", ctx.Message().Text)
-//	if err != nil {
-//		_, err = ctx.Bot().Edit(driverRegistrationData.Message,
-//			template.ParseTemplate(template.DriverRegistrationTemplate, driverRegistrationData),
-//			markup.CreateDriverMarkup("Ввести год выпуска автомобиля", markup.Admin_CreateDriver_InputLicenseIssueDate),
-//		)
-//		return err
-//	}
-//	driverRegistrationData.CarYear = carYear
-//
-//	err = self.fsm.SaveRegistrationData(context.TODO(), driverRegistrationData)
-//	if err != nil {
-//		return handleError(ctx, errors.Wrap(err, "failed to save driver registration data"))
-//	}
-//
-//	_, err = ctx.Bot().Edit(driverRegistrationData.Message,
-//		template.ParseTemplate(template.DriverRegistrationTemplate, driverRegistrationData),
-//		markup.CreateDriverMarkup("Ввести VIN номер автомобиля", markup.Admin_CreateDriver_InputCarVIN),
-//	)
-//	return err
-//}
-//
-//func (self *AdminHandler) CreateDriverInputCarVIN(ctx tele.Context) error {
-//	self.fsm.SetState(ctx.Sender().ID, entity.CreateDriver_ReceiveCarVIN)
-//	return ctx.EditOrSend("Введите VIN номер автомобиля")
-//}
-//
-//func (self *AdminHandler) CreateDriverReceiveCarVIN(ctx tele.Context) error {
-//	defer ctx.Delete()
-//
-//	driverRegistrationData, err := self.fsm.GetRegistrationData(context.TODO())
-//	if err != nil {
-//		return handleError(ctx, errors.Wrap(err, "failed to get driver registration data"))
-//	}
-//
-//	driverRegistrationData.CarVIN = ctx.Message().Text
-//
-//	err = self.fsm.SaveRegistrationData(context.TODO(), driverRegistrationData)
-//	if err != nil {
-//		return handleError(ctx, errors.Wrap(err, "failed to save driver registration data"))
-//	}
-//
-//	_, err = ctx.Bot().Edit(driverRegistrationData.Message,
-//		template.ParseTemplate(template.DriverRegistrationTemplate, driverRegistrationData),
-//		markup.CreateDriverMarkup("Ввести гос. Номер автомобиля", markup.Admin_CreateDriver_InputLicensePlateNumber),
-//	)
-//	return err
-//}
-//
-//func (self *AdminHandler) CreateDriverInputLicensePlateNumber(ctx tele.Context) error {
-//	self.fsm.SetState(ctx.Sender().ID, entity.CreateDriver_ReceiveLicensePlateNumber)
-//	return ctx.EditOrSend("Введите гос. Номер автомобиля")
-//}
-//
-//func (self *AdminHandler) CreateDriverReceiveLicensePlateNumber(ctx tele.Context) error {
-//	defer ctx.Delete()
-//
-//	driverRegistrationData, err := self.fsm.GetRegistrationData(context.TODO())
-//	if err != nil {
-//		return handleError(ctx, errors.Wrap(err, "failed to get driver registration data"))
-//	}
-//
-//	driverRegistrationData.LicensePlateNumber = ctx.Message().Text
-//
-//	err = self.fsm.SaveRegistrationData(context.TODO(), driverRegistrationData)
-//	if err != nil {
-//		return handleError(ctx, errors.Wrap(err, "failed to save driver registration data"))
-//	}
-//
-//	_, err = ctx.Bot().Edit(driverRegistrationData.Message,
-//		template.ParseTemplate(template.DriverRegistrationTemplate, driverRegistrationData),
-//		markup.CreateDriverMarkup("Завершить регистрацию", markup.Admin_CreateDriver_ConfirmData),
-//	)
-//	return err
-//}
-//
-//func (self *AdminHandler) CreateDriverInputReferralKey(ctx tele.Context) error {
-//	self.fsm.SetState(ctx.Sender().ID, entity.CreateDriver_ReceiveReferralKey)
-//	return ctx.EditOrSend("Введите реферальный ключ")
-//}
-//
-//func (self *AdminHandler) CreateDriverReceiveReferralKey(ctx tele.Context) error {
-//	defer ctx.Delete()
-//
-//	driverRegistrationData, err := self.fsm.GetRegistrationData(context.TODO())
-//	if err != nil {
-//		return handleError(ctx, errors.Wrap(err, "failed to get driver registration data"))
-//	}
-//
-//	referralKey, err := strconv.Atoi(ctx.Message().Text)
-//	if err != nil {
-//		_, err = ctx.Bot().Edit(driverRegistrationData.Message,
-//			template.ParseTemplate(template.DriverRegistrationTemplate, driverRegistrationData),
-//			markup.CreateDriverMarkup("Ввести реферальный ключ", markup.Admin_CreateDriver_InputRefferalKey),
-//		)
-//		return err
-//	}
-//	driverRegistrationData.ReferralKey = int64(referralKey)
-//
-//	err = self.fsm.SaveRegistrationData(context.TODO(), driverRegistrationData)
-//	if err != nil {
-//		return handleError(ctx, errors.Wrap(err, "failed to save driver registration data"))
-//	}
-//
-//	_, err = ctx.Bot().Edit(driverRegistrationData.Message,
-//		template.ParseTemplate(template.DriverRegistrationTemplate, driverRegistrationData),
-//		markup.CreateDriverMarkup("Завершить регистрацию", markup.Admin_CreateDriver_ConfirmData),
-//	)
-//	return err
-//}
-//
-//func (self *AdminHandler) CreateDriverConfirm(ctx tele.Context) error {
-//	driverRegistrationData, err := self.fsm.GetRegistrationData(context.TODO())
-//	if err != nil {
-//		return handleError(ctx, errors.Wrap(err, "failed to get driver registration data"))
-//	}
-//
-//	err = self.adminService.CreateDriver(
-//		context.TODO(),
-//		driverRegistrationData.ToDriver(),
-//		driverRegistrationData.ToCar(),
-//	)
-//	if err != nil {
-//		return handleError(ctx, errors.Wrap(err, "failed to create driver"))
-//	}
-//
-//	return self.Menu(ctx)
-//}
-//
-//func (self *AdminHandler) CreateDriverAbort(ctx tele.Context) error {
-//	self.fsm.Clear(ctx.Sender().ID)
-//	return self.Menu(ctx)
-//}
+func (self *AdminHandler) RegistrationApplications(ctx tele.Context) error {
+	registrationApplications, err := self.registrationApplicationService.GetRegistrationApplications(ctx)
+	if err != nil {
+		return Error(ctx, err)
+	}
+
+	var registrationApplicationsData = template.RegistrationApplicationsData{
+		Items: lo.Map(registrationApplications, func(item *entity.RegistrationApplication, index int) template.RegistrationApplication {
+			return template.RegistrationApplication{
+				Date:     item.Date,
+				Fullname: item.Fullname(),
+				Link:     item.Link(),
+			}
+		}),
+	}
+
+	return ctx.EditOrSend(
+		template.ParseTemplate(template.RegistrationApplicationsTemplate, registrationApplicationsData),
+	)
+}
+
+func (self *AdminHandler) DriversList(ctx tele.Context) error {
+	car := entity.NewCar("test_fleet_id", "test_brand", "test_model", 2012, "test_color", "test_vin", "test_number", "test_license")
+	license := entity.NewDriverLicense("test_certificate", time.Unix(1, 0), time.Unix(2, 0), time.Unix(3, 0), "rus")
+	driver1 := entity.NewDriver(111, "Мизеров", "Егор", "Мизеров", common.Point("Викторович"), "test_city", "+79956908933", car.ID, license)
+	driver2 := entity.NewDriver(222, "test_fleet_id", "test_first_name", "test_last_name", common.Point("test_middle_name"), "test_city", "+79222112253", car.ID, license)
+
+	var drivers = []*entity.Driver{driver1, driver2}
+	var driversListData = template.DriversListData{
+		Items: lo.Map(drivers, func(item *entity.Driver, index int) template.DriversListItem {
+			return template.DriversListItem{
+				PhoneNumber: item.PhoneNuber.String(),
+				Fullname:    item.Fullname(),
+			}
+		}),
+	}
+
+	return ctx.Send(
+		template.ParseTemplate(template.DriversListTemplate, driversListData),
+	)
+}
+
+func (self *AdminHandler) GetDriverByPhone(edit bool) func(ctx tele.Context) error {
+	return func(ctx tele.Context) error {
+		driver, err := self.driverService.GetDriverByPhoneNumber(ctx, entity.PhoneNumber(ctx.Text()))
+		err = nil
+		driver = &entity.Driver{ID: entity.DriverID(uuid.New()), FirstName: "Егор", LastName: "Мизеров", PhoneNuber: "+79956908933"}
+		if err != nil {
+			if errors.Is(err, interfaces.ErrDriverNotFound) {
+				return ctx.Send(fmt.Sprintf("Водителя с номером %s не суещствует!", ctx.Text()))
+			}
+			return Error(ctx, err)
+		}
+
+		message := template.ParseTemplate(template.DriverInfoTemplate, template.DriverInfoData{
+			ID:             uuid.UUID(driver.ID).String(),
+			Fullname:       driver.Fullname(),
+			PhoneNumber:    driver.PhoneNuber.String(),
+			City:           driver.City,
+			IsSelfEmployed: driver.IsSelfEmployed,
+			WorkRule:       driver.WorkRule.StringPointer(),
+		})
+
+		if edit {
+			return ctx.Edit(message, markup.DriverInfoMarkup())
+		} else {
+			return ctx.Send(message, markup.DriverInfoMarkup())
+		}
+	}
+}
+
+func (self *AdminHandler) GetDriversCarInfo(ctx tele.Context) error {
+	car := entity.NewCar("some_id", "Lada", "Vesta", 2012, "Белый", "somevin", "П123НС159", "9923742455")
+	return ctx.Edit(
+		template.ParseTemplate(template.DriversCarInfoTemplate, template.DriversCarInfoData{
+			Brand:  car.Brand,
+			Model:  car.Model,
+			Color:  car.Color,
+			Year:   car.Year,
+			VIN:    car.VIN,
+			Number: car.LicensePlateNumber,
+		}),
+		markup.DriverCarInfoMarkup(),
+	)
+}
 
 func (self *AdminHandler) CardsInfo(ctx tele.Context) error {
 	cardsResult, err := self.adminService.GetCards(context.TODO())
 	if err != nil {
-		return handleError(ctx, errors.Wrap(err, "failed to get cards info"))
+		return Error(ctx, errors.Wrap(err, "failed to get cards info"))
 	}
 
 	return ctx.EditOrSend(
@@ -751,9 +152,4 @@ func (self *AdminHandler) CardsInfo(ctx tele.Context) error {
 			AnotherCardsCount: cardsResult.AnotherCardsCount,
 		}),
 	)
-}
-
-func handleError(ctx tele.Context, err error) error {
-	hcontext.Logger(ctx).Error(err.Error())
-	return nil
 }

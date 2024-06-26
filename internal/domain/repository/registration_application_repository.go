@@ -7,6 +7,7 @@ import (
 )
 
 type RegistrationApplicationRepository interface {
-	GetRegistrationApplication(ctx context.Context, applicationID entity.RegistrationApplicationID) (*entity.RegistrationApplication, error)
 	SaveRegistrationApplication(ctx context.Context, application *entity.RegistrationApplication) error
+	GetRegistrationApplication(ctx context.Context, applicationID entity.RegistrationApplicationID) (*entity.RegistrationApplication, error)
+	GetRegistrationApplications(ctx context.Context) ([]*entity.RegistrationApplication, error)
 }

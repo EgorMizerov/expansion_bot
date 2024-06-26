@@ -34,7 +34,7 @@ CREATE TABLE drivers
     accept_cash bool NOT NULL,
     work_rule_id text,
     work_rule_updated_at timestamptz,
-    is_self_employed bool,
+    is_self_employed bool NOT NULL,
     car_id uuid REFERENCES cars(id) NOT NULL,
     driver_license_id uuid REFERENCES driver_license(id) NOT NULL,
     created_at timestamptz NOT NULL

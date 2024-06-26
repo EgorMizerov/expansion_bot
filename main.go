@@ -8,6 +8,7 @@ import (
 	"time"
 
 	fleet2 "github.com/EgorMizerov/expansion_bot/internal/infrastructure/fleet_v2"
+	"github.com/EgorMizerov/expansion_bot/internal/interface/telebot/middleware"
 	tele "github.com/EgorMizerov/telebot"
 	"github.com/caarlos0/env/v11"
 	"github.com/go-redis/redis"
@@ -16,7 +17,7 @@ import (
 	"github.com/EgorMizerov/expansion_bot/config"
 	"github.com/EgorMizerov/expansion_bot/internal/application/services"
 	"github.com/EgorMizerov/expansion_bot/internal/database"
-	postgres2 "github.com/EgorMizerov/expansion_bot/internal/infrastructure/db/postgres"
+	"github.com/EgorMizerov/expansion_bot/internal/infrastructure/db/postgres"
 	"github.com/EgorMizerov/expansion_bot/internal/infrastructure/fleet"
 	"github.com/EgorMizerov/expansion_bot/internal/infrastructure/jump"
 	redis2 "github.com/EgorMizerov/expansion_bot/internal/infrastructure/redis"
@@ -27,11 +28,13 @@ import (
 
 func main() {
 	godotenv.Load()
-	// Config
-	config, err := env.ParseAs[config.Config]()
+	// ConfigValues
+	var err error
+	config.Config, err = env.ParseAs[config.ConfigValues]()
 	if err != nil {
 		panic("faield to parse env: " + err.Error())
 	}
+	config := config.Config
 
 	// Logger
 	logger := logger.Logger(logger.LogType(config.LogType), logger.LogLevel(config.LogLevel))
@@ -61,7 +64,7 @@ func main() {
 	}
 
 	//if err = migrations.Migrate(db, "./migrations"); err != nil {
-	//	logger.Error("failed to up migrations", slog.Any("error", err))
+	//	logger.CallbackError("failed to up migrations", slog.Any("error", err))
 	//	return
 	//}
 
@@ -79,13 +82,16 @@ func main() {
 	adminId, _ := strconv.Atoi(config.AdminID)
 	bot := telebot.NewBot(teleBot, stateMachine, int64(adminId))
 
-	driverRepository := postgres2.NewDriverRepository(db)
-	carRepository := postgres2.NewCarRepository(db)
-	registrationApplicationRepository := postgres2.NewRegistrationApplicationRepository(db)
+	driverRepository := postgres.NewDriverRepository(db)
+	carRepository := postgres.NewCarRepository(db)
+	registrationApplicationRepository := postgres.NewRegistrationApplicationRepository(db)
 
 	adminService := services.NewAdminService(driverRepository, carRepository, fleetClient, jumpClient)
 	registrationApplicationService := services.NewRegistrationApplicationService(fleet2Client, jumpClient, registrationApplicationRepository, driverRepository, carRepository)
-	telebot.NewAdminHandler(bot, stateMachine, adminService)
+	driverService := services.NewDriverService(driverRepository)
+
+	bot.Use(middleware.LoggerMiddleware(logger))
+	telebot.NewAdminHandler(bot, stateMachine, driverService, adminService, registrationApplicationService)
 	telebot.NewGuestHandler(bot)
 
 	go func() {

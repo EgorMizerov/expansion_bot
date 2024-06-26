@@ -2,7 +2,6 @@ package telebot
 
 import (
 	"github.com/EgorMizerov/expansion_bot/internal/domain/entity"
-
 	tele "github.com/EgorMizerov/telebot"
 )
 
@@ -19,26 +18,12 @@ func NewBot(teleBot *tele.Bot, fsm FSM, adminID int64) *Bot {
 		startHandlers: make(map[entity.Role]func(ctx tele.Context) error),
 	}
 
-	bot.Handle(tele.OnText, func(ctx tele.Context) error {
-		state, err := fsm.GetState(ctx.Sender().ID)
-		if err != nil {
-			return nil
-		}
-
-		handler, ok := bot.stateHandlers[state]
-		if ok {
-			return handler(ctx)
-		}
-		return nil
-	})
-
 	bot.Handle("/start", func(ctx tele.Context) error {
 		if ctx.Sender().ID == adminID {
 			return bot.startHandlers[entity.AdminRole](ctx)
 		} else {
 			return bot.startHandlers[entity.GuestRole](ctx)
 		}
-		return nil
 	})
 
 	return bot

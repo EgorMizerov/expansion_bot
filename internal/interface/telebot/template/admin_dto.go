@@ -81,3 +81,55 @@ type CardsInfoData struct {
 	TinkoffCardsCount int
 	AnotherCardsCount int
 }
+
+type RegistrationApplicationsData struct {
+	Items []RegistrationApplication
+}
+
+type RegistrationApplication struct {
+	Date     time.Time
+	Fullname string
+	Link     string
+}
+
+func (self RegistrationApplication) FormattedTime(t time.Time) string {
+	defaultTime := time.Time{}
+	if t == defaultTime {
+		return ""
+	}
+	return t.Format(time.DateOnly)
+}
+
+type DriversListData struct {
+	Items []DriversListItem
+}
+
+type DriversListItem struct {
+	PhoneNumber string
+	Fullname    string
+}
+
+type DriverInfoData struct {
+	ID             string
+	Fullname       string
+	PhoneNumber    string
+	City           string
+	IsSelfEmployed bool
+	WorkRule       *string
+}
+
+func (self DriverInfoData) Nullable(arg *string) string {
+	if arg == nil {
+		return "-"
+	}
+	return *arg
+}
+
+type DriversCarInfoData struct {
+	Brand  string
+	Model  string
+	Color  string
+	Year   int
+	VIN    string
+	Number string
+}

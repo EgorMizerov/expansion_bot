@@ -1,6 +1,8 @@
 package config
 
-type Config struct {
+var Config ConfigValues
+
+type ConfigValues struct {
 	PostgresHost     string `env:"POSTGRES_HOST"`
 	PostgresPort     string `env:"POSTGRES_PORT"`
 	PostgresDatabase string `env:"POSTGRES_DB"`
