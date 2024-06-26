@@ -70,7 +70,7 @@ func main() {
 
 	// Dependencies
 	fleetClient := fleet.NewClient(config.FleetHost, config.FleetParkID, config.FleetClientID, config.FleetAPIKey)
-	fleet2Client := fleet2.NewFleetClient(config.FleetHost, config.FleetParkID, config.FleetClientID, config.FleetAPIKey)
+	fleet2Client := fleet2.NewFleetClient(config.FleetHost, config.FleetClientID, config.FleetParkID, config.FleetAPIKey)
 	jumpClient := jump.NewJumpClient(config.JumpTaxiHost, config.JumpTaxiClientKey)
 	redisClient := redis.NewClient(&redis.Options{Addr: fmt.Sprintf("%s:%s", config.RedisHost, config.RedisPort)})
 
