@@ -49,11 +49,11 @@ func NewAdminHandler(bot *Bot, stateMachine FSM, driverService interfaces.Driver
 		bot.Handle(markup.ConfirmRegistrationApplicationRegexp.Endpoint(), admin.ConfirmRegistrationApplication, middleware.AdminAuth())
 
 		{ // Set work rule for Registration Applications
-			bot.Handle(&markup.SetFixWorkRuleForApplicationButton, admin.SetWorkRuleForApplication(entity.FixWorkRule), middleware.AdminAuth())
-			bot.Handle(&markup.SetFixSelfEmployedWorkRuleForApplicationButton, admin.SetWorkRuleForApplication(entity.FixSelfEmployedWorkRule), middleware.AdminAuth())
-			bot.Handle(&markup.SetPercentWorkRuleForApplicationButton, admin.SetWorkRuleForApplication(entity.PercentWorkRule), middleware.AdminAuth())
-			bot.Handle(&markup.SetPercentSelfEmployedWorkRuleForApplicationButton, admin.SetWorkRuleForApplication(entity.PercentSelfEmployedWorkRule), middleware.AdminAuth())
-			bot.Handle(&markup.SetPerDayWorkRuleForApplicationButton, admin.SetWorkRuleForApplication(entity.PerDayWorkRule), middleware.AdminAuth())
+			bot.Handle(markup.SetFixWorkRuleForApplicationRegexp.Endpoint(), admin.SetWorkRuleForApplication(entity.FixWorkRule), middleware.AdminAuth())
+			bot.Handle(markup.SetFixSelfEmployedWorkRuleForApplicationRegexp.Endpoint(), admin.SetWorkRuleForApplication(entity.FixSelfEmployedWorkRule), middleware.AdminAuth())
+			bot.Handle(markup.SetPercentWorkRuleForApplicationRegexp.Endpoint(), admin.SetWorkRuleForApplication(entity.PercentWorkRule), middleware.AdminAuth())
+			bot.Handle(markup.SetPercentSelfEmployedWorkRuleForApplicationRegexp.Endpoint(), admin.SetWorkRuleForApplication(entity.PercentSelfEmployedWorkRule), middleware.AdminAuth())
+			bot.Handle(markup.SetPerDayWorkRuleForApplicationRegexp.Endpoint(), admin.SetWorkRuleForApplication(entity.PerDayWorkRule), middleware.AdminAuth())
 		}
 	}
 
@@ -86,7 +86,7 @@ func (self *AdminHandler) RegistrationApplications(ctx tele.Context) error {
 	}
 
 	return ctx.EditOrSend(
-		template.ParseTemplate(template.RegistrationApplicationsTemplate, registrationApplicationsData),
+		template.ParseTemplate(template.RegistrationApplicationsTemplate, registrationApplicationsData), tele.ModeDefault,
 	)
 }
 
