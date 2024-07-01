@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS driver_license (
 CREATE TABLE drivers
 (
     id uuid NOT NULL PRIMARY KEY,
-    telegram_id int UNIQUE,
+    telegram_id int NOT NULL UNIQUE,
     fleet_id varchar(32) NOT NULL UNIQUE,
     jump_id int NOT NULL UNIQUE,
     first_name text NOT NULL,
@@ -32,8 +32,8 @@ CREATE TABLE drivers
     city text NOT NULL,
     phone_number text NOT NULL,
     accept_cash bool NOT NULL,
-    work_rule_id text,
-    work_rule_updated_at timestamptz,
+    work_rule_id text NOT NULL,
+    work_rule_updated_at timestamptz NOT NULL,
     is_self_employed bool NOT NULL,
     car_id uuid REFERENCES cars(id) NOT NULL,
     driver_license_id uuid REFERENCES driver_license(id) NOT NULL,

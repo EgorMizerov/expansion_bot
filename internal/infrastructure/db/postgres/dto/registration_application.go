@@ -3,6 +3,7 @@ package dto
 import (
 	"time"
 
+	"github.com/EgorMizerov/expansion_bot/internal/common"
 	"github.com/EgorMizerov/expansion_bot/internal/domain/entity"
 )
 
@@ -30,11 +31,16 @@ type RegistrationApplication struct {
 	CarVIN     *string `db:"car_vin"`
 	CarNumber  *string `db:"car_number"`
 	CarLicense *string `db:"car_license"`
+	WorkRuleID *string `db:"work_rule_id"`
 }
 
 func ToRegistrationApplication(application *entity.RegistrationApplication) *RegistrationApplication {
 	if application == nil {
 		return nil
+	}
+	var workRuleID *string
+	if application.WorkRule != nil {
+		workRuleID = common.Point(application.WorkRule.ID)
 	}
 
 	return &RegistrationApplication{
@@ -58,10 +64,15 @@ func ToRegistrationApplication(application *entity.RegistrationApplication) *Reg
 		CarVIN:                application.CarVIN,
 		CarNumber:             application.CarNumber,
 		CarLicense:            application.CarLicense,
+		WorkRuleID:            workRuleID,
 	}
 }
 
 func (self RegistrationApplication) ToRegistrationApplication() *entity.RegistrationApplication {
+	var workRule *entity.WorkRule
+	if self.WorkRuleID != nil {
+		workRule = common.Point(entity.WorkRuleFromID(*self.WorkRuleID))
+	}
 	return &entity.RegistrationApplication{
 		ID:                    entity.RegistrationApplicationID(self.ID),
 		Status:                self.Status,
@@ -83,5 +94,6 @@ func (self RegistrationApplication) ToRegistrationApplication() *entity.Registra
 		CarVIN:                self.CarVIN,
 		CarNumber:             self.CarNumber,
 		CarLicense:            self.CarLicense,
+		WorkRule:              workRule,
 	}
 }

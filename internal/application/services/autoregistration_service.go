@@ -19,10 +19,25 @@ type RegistrationApplicationService struct {
 	registrationApplicationRepository repository.RegistrationApplicationRepository
 	driverRepository                  repository.DriverRepository
 	carRepository                     repository.CarRepository
+	guestRepository                   repository.GuestRepository
 }
 
-func NewRegistrationApplicationService(fleetClient *fleet2.FleetClient, jumpClient *jump.JumpClient, registrationApplicationRepository repository.RegistrationApplicationRepository, driverRepository repository.DriverRepository, carRepository repository.CarRepository) *RegistrationApplicationService {
-	return &RegistrationApplicationService{fleetClient: fleetClient, jumpClient: jumpClient, registrationApplicationRepository: registrationApplicationRepository, driverRepository: driverRepository, carRepository: carRepository}
+func NewRegistrationApplicationService(
+	fleetClient *fleet2.FleetClient,
+	jumpClient *jump.JumpClient,
+	registrationApplicationRepository repository.RegistrationApplicationRepository,
+	driverRepository repository.DriverRepository,
+	carRepository repository.CarRepository,
+	guestRepository repository.GuestRepository,
+) *RegistrationApplicationService {
+	return &RegistrationApplicationService{
+		fleetClient:                       fleetClient,
+		jumpClient:                        jumpClient,
+		registrationApplicationRepository: registrationApplicationRepository,
+		driverRepository:                  driverRepository,
+		carRepository:                     carRepository,
+		guestRepository:                   guestRepository,
+	}
 }
 
 func (self *RegistrationApplicationService) GetRegistrationApplication(ctx context.Context, applicationID entity.RegistrationApplicationID) (*entity.RegistrationApplication, error) {
@@ -37,27 +52,68 @@ func (self *RegistrationApplicationService) SaveRegistrationApplication(ctx cont
 	return self.registrationApplicationRepository.SaveRegistrationApplication(ctx, application)
 }
 
-func (self *RegistrationApplicationService) ConfirmRegistrationApplication(ctx context.Context, application *entity.RegistrationApplication) error {
-	jumpDriver, err := self.jumpClient.GetDriverByPhoneNumber(ctx, *application.PhoneNumber)
+func (self *RegistrationApplicationService) ConfirmRegistrationApplication(ctx context.Context, registrationApplication *entity.RegistrationApplication) error {
+	jumpDriver, err := self.jumpClient.GetDriverByPhoneNumber(ctx, *registrationApplication.PhoneNumber)
 	if err != nil {
 		return errors.Wrap(err, "failed to get driver from jump")
 	}
-	fleetDriver, err := self.getDriverFromFleetByPhoneNumber(ctx, *application.PhoneNumber)
+	fleetDriver, err := self.getDriverFromFleetByPhoneNumber(ctx, *registrationApplication.PhoneNumber)
 	if err != nil {
 		return errors.Wrap(err, "failed to get driver from fleet")
 	}
+	guest, err := self.guestRepository.GetGuestByPhoneNumber(ctx, entity.PhoneNumber(*registrationApplication.PhoneNumber))
+	if err != nil {
+		return errors.Wrap(err, "failed to get guest by phone number")
+	}
 
-	car := entity.NewCar(entity.CarFleetID(fleetDriver.Car.ID), *application.CarBrand, *application.CarModel, *application.CarYear, *application.CarColor, *application.CarVIN, *application.CarNumber, *application.CarLicense)
+	car := entity.NewCar(
+		entity.CarFleetID(fleetDriver.Car.ID),
+		*registrationApplication.CarBrand,
+		*registrationApplication.CarModel,
+		*registrationApplication.CarYear,
+		*registrationApplication.CarColor,
+		*registrationApplication.CarVIN,
+		*registrationApplication.CarNumber,
+		*registrationApplication.CarLicense,
+	)
 	err = self.carRepository.CreateCar(ctx, car)
 	if err != nil {
 		return errors.Wrap(err, "failed to create car")
 	}
 
-	driver := entity.NewDriver(entity.JumpID(jumpDriver.ID), entity.FleetID(fleetDriver.DriverProfile.ID), *application.FirstName, *application.LastName, application.MiddleName, *application.City, entity.PhoneNumber(*application.PhoneNumber), car.ID,
-		entity.NewDriverLicense(*application.LicenseNumber, *application.LicenseTotalSinceDate, *application.LicenseIssueDate, *application.LicenseExpiryDate, *application.LicenseCountry))
+	isSelfEmployed := func(rule entity.WorkRule) bool {
+		return rule == entity.FixSelfEmployedWorkRule || rule == entity.PercentSelfEmployedWorkRule
+	}(*registrationApplication.WorkRule)
+
+	driver := entity.NewDriver(
+		entity.JumpID(jumpDriver.ID),
+		entity.FleetID(fleetDriver.DriverProfile.ID),
+		guest.TelegramID,
+		*registrationApplication.FirstName,
+		*registrationApplication.LastName,
+		registrationApplication.MiddleName,
+		*registrationApplication.City,
+		entity.PhoneNumber(*registrationApplication.PhoneNumber),
+		car.ID,
+		entity.NewDriverLicense(
+			*registrationApplication.LicenseNumber,
+			*registrationApplication.LicenseTotalSinceDate,
+			*registrationApplication.LicenseIssueDate,
+			*registrationApplication.LicenseExpiryDate,
+			*registrationApplication.LicenseCountry,
+		),
+		isSelfEmployed,
+		*registrationApplication.WorkRule,
+	)
 	err = self.driverRepository.CreateDriver(ctx, driver)
 	if err != nil {
 		return errors.Wrap(err, "failed to create driver")
+	}
+
+	registrationApplication.SetStatus("closed")
+	err = self.registrationApplicationRepository.SaveRegistrationApplication(ctx, registrationApplication)
+	if err != nil {
+		return errors.Wrap(err, "failed to save registration application")
 	}
 
 	return nil

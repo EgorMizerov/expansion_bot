@@ -22,7 +22,9 @@ CREATE TABLE registration_application (
     car_color text,
     car_vin text,
     car_number text,
-    car_license text
+    car_license text,
+
+    work_rule_id text
 );
 
 -- +goose Down

@@ -6,6 +6,7 @@ import (
 	"github.com/EgorMizerov/expansion_bot/internal/domain/entity"
 	"github.com/EgorMizerov/expansion_bot/internal/infrastructure/db/postgres/dto"
 	"github.com/google/uuid"
+	"github.com/samber/lo"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
@@ -14,20 +15,24 @@ import (
 
 const (
 	createDriverQuery = `INSERT INTO drivers 
-		(id, telegram_id, fleet_id, jump_id, first_name, last_name, middle_name, city, phone_number, created_at, accept_cash, is_self_employed, car_id, driver_license_id)
-		VALUES (:id, :telegram_id, :fleet_id, :jump_id, :first_name, :last_name, :middle_name, :city, :phone_number, :created_at, :accept_cash, :is_self_employed, :car_id, :driver_license_id)`
+		(id, telegram_id, fleet_id, jump_id, first_name, last_name, middle_name, city, phone_number, created_at, accept_cash, is_self_employed, car_id, driver_license_id, work_rule_id, work_rule_updated_at)
+		VALUES (:driver_id, :telegram_id, :fleet_id, :jump_id, :first_name, :last_name, :middle_name, :city, :phone_number, :created_at, :accept_cash, :is_self_employed, :car_id, :driver_license_id, :work_rule_id, :work_rule_updated_at)`
 
 	createDriverLicenseQuery = `INSERT INTO driver_license
 		(id, registration_certificate, driving_experience, issue_date, expiry_date, country)
-		VALUES (:id, :registration_certificate, :driving_experience, :issue_date, :expiry_date, :country)`
+		VALUES (:license_id, :registration_certificate, :driving_experience, :issue_date, :expiry_date, :country)`
 
 	updateDriverQuery = `UPDATE drivers SET
 		telegram_id=:telegram_id, phone_number=:phone_number, accept_cash=:accept_cash, work_rule_id=:work_rule_id, work_rule_updated_at=:work_rule_updated_at, is_self_employed=:is_self_employed
-		WHERE id=:id`
+		WHERE id=:driver_id`
 
-	getDriverByIDQuery          = `SELECT * FROM drivers WHERE id=:id`
+	getDriversQuery = `SELECT d.id AS driver_id, d.telegram_id, d.fleet_id, d.jump_id, d.first_name, d.last_name, d.middle_name, d.city, d.phone_number, d.created_at, d.accept_cash, d.is_self_employed, d.car_id, d.driver_license_id, dl.id AS license_id, dl.registration_certificate, dl.driving_experience, dl.issue_date, dl.expiry_date, dl.country 
+		FROM drivers AS d
+		JOIN driver_license AS dl ON d.driver_license_id = dl.id`
+
+	getDriverByIDQuery          = `SELECT id AS driver_id, telegram_id, fleet_id, jump_id, first_name, last_name, middle_name, city, phone_number, created_at, accept_cash, is_self_employed, car_id, driver_license_id FROM drivers WHERE id=:driver_id`
 	getDriverByPhoneNumberQuery = `SELECT * FROM drivers WHERE phone_number=:phone_number`
-	getDriverLicenseByIDQuery   = `SELECT * FROM driver_license WHERE id=:id`
+	getDriverLicenseByIDQuery   = `SELECT * FROM driver_license WHERE id=:license_id`
 )
 
 type DriverRepository struct {
@@ -79,25 +84,18 @@ func (self *DriverRepository) GetDriverByPhoneNumber(ctx context.Context, phone 
 }
 
 func (self *DriverRepository) GetDrivers(ctx context.Context) ([]*entity.Driver, error) {
-	sql, _ := sq.Select("d.id", "d.telegram_id", "d.first_name", "d.last_name", "d.middle_name", "d.address", "d.phone_number", "d.card_number", "d.referral_key", "d.accept_cash", "d.work_rule_id", "d.work_rule_updated_at", "d.car_id", "d.created_at", "dl.driver_id", "dl.registration_certificate", "dl.driving_experience", "dl.issue_date", "dl.expiry_date", "dl.country").
-		From("drivers AS d").Join("driver_license AS dl ON d.id = dl.driver_id").MustSql()
-
-	rows, err := self.db.QueryxContext(ctx, sql)
+	rows, err := self.db.QueryxContext(ctx, getDriversQuery)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to execute a query")
+		return nil, err
+	}
+	drivers, err := StructListScan[dto.DriverWithLicenseDTO](rows)
+	if err != nil {
+		return nil, err
 	}
 
-	var drivers []*entity.Driver
-	for rows.Next() {
-		var driver entity.Driver
-		err = rows.StructScan(&driver)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to struct scan")
-		}
-		drivers = append(drivers, &driver)
-	}
-
-	return drivers, nil
+	return lo.Map(drivers, func(item dto.DriverWithLicenseDTO, _ int) *entity.Driver {
+		return item.ToEntity()
+	}), nil
 }
 
 func (self *DriverRepository) UpdateDriver(ctx context.Context, driver *entity.Driver) error {

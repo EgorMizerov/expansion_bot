@@ -3,9 +3,8 @@ package telebot
 import (
 	"context"
 	"fmt"
-	"time"
+	"strconv"
 
-	"github.com/EgorMizerov/expansion_bot/internal/common"
 	"github.com/EgorMizerov/expansion_bot/internal/interface/telebot/middleware"
 	tele "github.com/EgorMizerov/telebot"
 	"github.com/google/uuid"
@@ -42,9 +41,22 @@ func NewAdminHandler(bot *Bot, stateMachine FSM, driverService interfaces.Driver
 	}
 
 	bot.HandleStart(entity.AdminRole, admin.Menu)
-	bot.Handle(markup.AdminUsersRegistrationApplicationsButton.Text, admin.RegistrationApplications, middleware.AdminAuth())
 	bot.Handle(markup.AdminUsersButton.Text, admin.DriversList, middleware.AdminAuth())
-	bot.Handle(`rx:\+7\d{10}`, admin.GetDriverByPhone(false), middleware.AdminAuth())
+	bot.Handle(markup.DriverPhoneRegexp.Endpoint(), admin.GetDriverByPhone(false), middleware.AdminAuth())
+	{ // Registration Applications
+		bot.Handle(markup.AdminUsersRegistrationApplicationsButton.Text, admin.RegistrationApplications, middleware.AdminAuth())
+		bot.Handle(markup.RegistrationApplicationIDRegexp.Endpoint(), admin.EditRegistrationApplications, middleware.AdminAuth())
+		bot.Handle(markup.ConfirmRegistrationApplicationRegexp.Endpoint(), admin.ConfirmRegistrationApplication, middleware.AdminAuth())
+
+		{ // Set work rule for Registration Applications
+			bot.Handle(&markup.SetFixWorkRuleForApplicationButton, admin.SetWorkRuleForApplication(entity.FixWorkRule), middleware.AdminAuth())
+			bot.Handle(&markup.SetFixSelfEmployedWorkRuleForApplicationButton, admin.SetWorkRuleForApplication(entity.FixSelfEmployedWorkRule), middleware.AdminAuth())
+			bot.Handle(&markup.SetPercentWorkRuleForApplicationButton, admin.SetWorkRuleForApplication(entity.PercentWorkRule), middleware.AdminAuth())
+			bot.Handle(&markup.SetPercentSelfEmployedWorkRuleForApplicationButton, admin.SetWorkRuleForApplication(entity.PercentSelfEmployedWorkRule), middleware.AdminAuth())
+			bot.Handle(&markup.SetPerDayWorkRuleForApplicationButton, admin.SetWorkRuleForApplication(entity.PerDayWorkRule), middleware.AdminAuth())
+		}
+	}
+
 	bot.Handle(&markup.DriverInfoShowCarInfoButton, admin.GetDriversCarInfo, middleware.AdminAuth())
 	bot.Handle(&markup.DriverInfoShowCarInfoBackButton, admin.GetDriverByPhone(true), middleware.AdminAuth())
 
@@ -64,6 +76,8 @@ func (self *AdminHandler) RegistrationApplications(ctx tele.Context) error {
 	var registrationApplicationsData = template.RegistrationApplicationsData{
 		Items: lo.Map(registrationApplications, func(item *entity.RegistrationApplication, index int) template.RegistrationApplication {
 			return template.RegistrationApplication{
+				ID:       int(item.ID),
+				Status:   item.Status,
 				Date:     item.Date,
 				Fullname: item.Fullname(),
 				Link:     item.Link(),
@@ -76,13 +90,74 @@ func (self *AdminHandler) RegistrationApplications(ctx tele.Context) error {
 	)
 }
 
-func (self *AdminHandler) DriversList(ctx tele.Context) error {
-	car := entity.NewCar("test_fleet_id", "test_brand", "test_model", 2012, "test_color", "test_vin", "test_number", "test_license")
-	license := entity.NewDriverLicense("test_certificate", time.Unix(1, 0), time.Unix(2, 0), time.Unix(3, 0), "rus")
-	driver1 := entity.NewDriver(111, "Мизеров", "Егор", "Мизеров", common.Point("Викторович"), "test_city", "+79956908933", car.ID, license)
-	driver2 := entity.NewDriver(222, "test_fleet_id", "test_first_name", "test_last_name", common.Point("test_middle_name"), "test_city", "+79222112253", car.ID, license)
+func (self *AdminHandler) EditRegistrationApplications(ctx tele.Context) error {
+	id, _ := strconv.Atoi(ctx.Text())
+	registrationApplication, err := self.registrationApplicationService.GetRegistrationApplication(ctx, entity.RegistrationApplicationID(id))
+	if err != nil {
+		return Error(ctx, errors.Wrap(err, "failed to get registration application"))
+	}
+	if registrationApplication.Status != "registered" {
+		return ctx.Send("Редактировать можно только те заявки, что находятся в статусе \"registered\". Для этого их нужно принять в jump!")
+	}
 
-	var drivers = []*entity.Driver{driver1, driver2}
+	return ctx.Send("Выберите тариф", markup.ChooseWorkRuleMarkup(registrationApplication.ID))
+}
+
+func (self *AdminHandler) ConfirmRegistrationApplication(ctx tele.Context) error {
+	defer ctx.Delete()
+
+	registrationApplicationID := entity.RegistrationApplicationID(markup.Regexp(ctx.Callback().Data).GetNumber())
+	registrationApplication, err := self.registrationApplicationService.GetRegistrationApplication(ctx, registrationApplicationID)
+	if err != nil {
+		return Error(ctx, errors.Wrap(err, "failed to get registration application"))
+	}
+	registrationApplication.SetStatus("closed")
+
+	err = self.registrationApplicationService.ConfirmRegistrationApplication(ctx, registrationApplication)
+	if err != nil {
+		return Error(ctx, errors.Wrap(err, "failed to confirm registration application"))
+	}
+
+	return ctx.RespondAlert("Регистрация пользователя подтверждена!")
+}
+
+func (self *AdminHandler) SetWorkRuleForApplication(rule entity.WorkRule) func(ctx tele.Context) error {
+	return func(ctx tele.Context) error {
+		registrationApplicationID := entity.RegistrationApplicationID(markup.Regexp(ctx.Callback().Data).GetNumber())
+		registrationApplication, err := self.registrationApplicationService.GetRegistrationApplication(ctx, registrationApplicationID)
+		if err != nil {
+			return Error(ctx, errors.Wrap(err, "failed to get registration application"))
+		}
+		registrationApplication.SetWorkRule(rule)
+		err = self.registrationApplicationService.SaveRegistrationApplication(ctx, registrationApplication)
+		if err != nil {
+			return Error(ctx, errors.Wrap(err, "failed to save registration application"))
+		}
+		return ctx.Edit(template.ParseTemplate(template.RegistrationApplicationTemplate, template.DriverRegistrationData{
+			FullName:          registrationApplication.Fullname(),
+			PhoneNumber:       *registrationApplication.PhoneNumber,
+			Address:           *registrationApplication.City,
+			DrivingExperience: *registrationApplication.LicenseTotalSinceDate,
+			LicenseNumber:     *registrationApplication.LicenseNumber,
+			LicenseCountry:    *registrationApplication.LicenseCountry,
+			LicenseIssueDate:  *registrationApplication.LicenseIssueDate,
+			LicenseExpiryDate: *registrationApplication.LicenseExpiryDate,
+			WorkRule:          *registrationApplication.WorkRule,
+			CarBrand:          *registrationApplication.CarBrand,
+			CarModel:          *registrationApplication.CarModel,
+			CarColor:          *registrationApplication.CarColor,
+			CarYear:           *registrationApplication.CarYear,
+			CarVIN:            *registrationApplication.CarVIN,
+			CarNumber:         *registrationApplication.CarNumber,
+		}), markup.ConfirmRegistrationApplicationMarkup(registrationApplicationID))
+	}
+}
+
+func (self *AdminHandler) DriversList(ctx tele.Context) error {
+	drivers, err := self.driverService.GetDrivers(ctx)
+	if err != nil {
+		return Error(ctx, errors.Wrap(err, "failed to get drivers"))
+	}
 	var driversListData = template.DriversListData{
 		Items: lo.Map(drivers, func(item *entity.Driver, index int) template.DriversListItem {
 			return template.DriversListItem{
@@ -100,8 +175,6 @@ func (self *AdminHandler) DriversList(ctx tele.Context) error {
 func (self *AdminHandler) GetDriverByPhone(edit bool) func(ctx tele.Context) error {
 	return func(ctx tele.Context) error {
 		driver, err := self.driverService.GetDriverByPhoneNumber(ctx, entity.PhoneNumber(ctx.Text()))
-		err = nil
-		driver = &entity.Driver{ID: entity.DriverID(uuid.New()), FirstName: "Егор", LastName: "Мизеров", PhoneNuber: "+79956908933"}
 		if err != nil {
 			if errors.Is(err, interfaces.ErrDriverNotFound) {
 				return ctx.Send(fmt.Sprintf("Водителя с номером %s не суещствует!", ctx.Text()))

@@ -4,7 +4,7 @@ go 1.22.3
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
-	github.com/EgorMizerov/telebot v1.0.4
+	github.com/EgorMizerov/telebot v1.0.6
 	github.com/Masterminds/squirrel v1.5.4
 	github.com/caarlos0/env/v11 v11.1.0
 	github.com/go-redis/redis v6.15.9+incompatible

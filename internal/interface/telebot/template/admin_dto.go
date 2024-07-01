@@ -1,38 +1,30 @@
 package template
 
 import (
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/EgorMizerov/expansion_bot/internal/domain/entity"
-
-	tele "github.com/EgorMizerov/telebot"
 )
 
 type DriverRegistrationData struct {
-	UserID                  int
-	ReferralKey             int64
-	FullName                string
-	PhoneNumber             string
-	Address                 string
-	DrivingExperience       time.Time
-	RegistrationCertificate string
-	LicenseCountry          string
-	LicenseIssueDate        time.Time
-	LicenseExpiryDate       time.Time
-	IsSelfEmployed          bool
-	CardNumber              CardNumber
-	WorkRule                entity.WorkRule
-	CarBrand                string
-	CarModel                string
-	CarColor                string
-	CarYear                 time.Time
-	CarVIN                  string
-	LicensePlateNumber      string
-
-	InputMessage string
-	Message      *tele.Message
+	FullName          string
+	PhoneNumber       string
+	Address           string
+	WorkRule          entity.WorkRule
+	DrivingExperience time.Time
+	LicenseNumber     string
+	LicenseCountry    string
+	LicenseIssueDate  time.Time
+	LicenseExpiryDate time.Time
+	IsSelfEmployed    bool
+	CardNumber        CardNumber
+	CarBrand          string
+	CarModel          string
+	CarColor          string
+	CarYear           int
+	CarVIN            string
+	CarNumber         string
 }
 
 type CardNumber string
@@ -57,14 +49,6 @@ func (self DriverRegistrationData) FormattedTime(t time.Time) string {
 	return t.Format(time.DateOnly)
 }
 
-func (self DriverRegistrationData) FormattedYear() string {
-	defaultTime := time.Time{}
-	if self.CarYear == defaultTime {
-		return ""
-	}
-	return strconv.Itoa(self.CarYear.Year())
-}
-
 func (self DriverRegistrationData) FirstName() string {
 	return strings.Fields(self.FullName)[1]
 }
@@ -87,6 +71,8 @@ type RegistrationApplicationsData struct {
 }
 
 type RegistrationApplication struct {
+	ID       int
+	Status   string
 	Date     time.Time
 	Fullname string
 	Link     string

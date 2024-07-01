@@ -15,8 +15,8 @@ type FleetID string
 
 type Driver struct {
 	// ID's
-	ID         DriverID    // Внутренний ID
-	TelegramID *TelegramID // Привязку к телеграмму осуществляет администратор
+	ID         DriverID // Внутренний ID
+	TelegramID TelegramID
 	JumpID     JumpID
 	FleetID    FleetID
 
@@ -30,29 +30,32 @@ type Driver struct {
 	DriverLicense  DriverLicense
 
 	// Account Info
-	WorkRule          *WorkRule
-	WorkRuleUpdatedAt *time.Time
+	WorkRule          WorkRule
+	WorkRuleUpdatedAt time.Time
 	AcceptCash        bool
 	CarID             CarID
 
 	CreatedAt time.Time
 }
 
-func NewDriver(jumpID JumpID, fleetID FleetID, firstName string, lastName string, middleName *string, city string, phoneNumber PhoneNumber, carID CarID, driverLicense DriverLicense) *Driver {
+func NewDriver(jumpID JumpID, fleetID FleetID, telegramID TelegramID, firstName string, lastName string, middleName *string, city string, phoneNumber PhoneNumber, carID CarID, driverLicense DriverLicense, isSelfEmployed bool, workRule WorkRule) *Driver {
 	return &Driver{
-		ID:            DriverID(uuid.New()),
-		TelegramID:    nil,
-		JumpID:        jumpID,
-		FleetID:       fleetID,
-		FirstName:     firstName,
-		MiddleName:    middleName,
-		LastName:      lastName,
-		City:          city,
-		PhoneNuber:    phoneNumber,
-		DriverLicense: driverLicense,
-		AcceptCash:    false,
-		CarID:         carID,
-		CreatedAt:     time.Unix(time.Now().Unix(), 0),
+		ID:                DriverID(uuid.New()),
+		TelegramID:        telegramID,
+		JumpID:            jumpID,
+		FleetID:           fleetID,
+		FirstName:         firstName,
+		MiddleName:        middleName,
+		LastName:          lastName,
+		City:              city,
+		IsSelfEmployed:    isSelfEmployed,
+		PhoneNuber:        phoneNumber,
+		DriverLicense:     driverLicense,
+		WorkRule:          workRule,
+		WorkRuleUpdatedAt: time.Unix(time.Now().Unix(), 0),
+		AcceptCash:        false,
+		CarID:             carID,
+		CreatedAt:         time.Unix(time.Now().Unix(), 0),
 	}
 }
 

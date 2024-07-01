@@ -10,10 +10,10 @@ import (
 )
 
 const (
-	saveRegistrationApplicationQuery = `INSERT INTO registration_application (id, status, date, phone_number, last_name, first_name, middle_name, city, license_number, license_total_since_date, license_issue_date, license_expiry_date, license_country, car_brand, car_model, car_year, car_color, car_vin, car_number, car_license)
-		VALUES (:id, :status, :date, :phone_number, :last_name, :first_name, :middle_name, :city, :license_number, :license_total_since_date, :license_issue_date, :license_expiry_date, :license_country, :car_brand, :car_model, :car_year, :car_color, :car_vin, :car_number, :car_license)
+	saveRegistrationApplicationQuery = `INSERT INTO registration_application (id, status, date, phone_number, last_name, first_name, middle_name, city, license_number, license_total_since_date, license_issue_date, license_expiry_date, license_country, car_brand, car_model, car_year, car_color, car_vin, car_number, car_license, work_rule_id)
+		VALUES (:id, :status, :date, :phone_number, :last_name, :first_name, :middle_name, :city, :license_number, :license_total_since_date, :license_issue_date, :license_expiry_date, :license_country, :car_brand, :car_model, :car_year, :car_color, :car_vin, :car_number, :car_license, :work_rule_id)
 		ON CONFLICT (id) DO UPDATE
-		SET status=:status, date=:date, phone_number=:phone_number, last_name=:last_name, first_name=:first_name, middle_name=:middle_name, city=:city, license_number=:license_number, license_total_since_date=:license_total_since_date, license_issue_date=:license_issue_date, license_expiry_date=:license_expiry_date, license_country=:license_country, car_brand=:car_brand, car_model=:car_model, car_year=:car_year, car_color=:car_color, car_vin=:car_vin, car_number=:car_number, car_license=:car_license`
+		SET status=:status, date=:date, phone_number=:phone_number, last_name=:last_name, first_name=:first_name, middle_name=:middle_name, city=:city, license_number=:license_number, license_total_since_date=:license_total_since_date, license_issue_date=:license_issue_date, license_expiry_date=:license_expiry_date, license_country=:license_country, car_brand=:car_brand, car_model=:car_model, car_year=:car_year, car_color=:car_color, car_vin=:car_vin, car_number=:car_number, car_license=:car_license, work_rule_id=:work_rule_id`
 
 	getRegistrationApplicationQuery = `SELECT
     	       id, status, date, phone_number, last_name, first_name, middle_name, city, license_number, license_total_since_date, license_issue_date, license_expiry_date, license_country, car_brand, car_model, car_year, car_color, car_vin, car_number, car_license
@@ -22,7 +22,7 @@ const (
 
 	getRegistrationApplicationsQuery = `SELECT id, status, date, phone_number, last_name, first_name, middle_name, city, license_number, license_total_since_date, license_issue_date, license_expiry_date, license_country, car_brand, car_model, car_year, car_color, car_vin, car_number, car_license
 		  FROM registration_application
-         WHERE status != 'registered'
+         WHERE status != 'closed'
       ORDER BY date DESC`
 )
 
@@ -50,9 +50,6 @@ func (self *RegistrationApplicationRepository) GetRegistrationApplications(ctx c
 	registrationApplications, err := StructListScan[dto.RegistrationApplication](rows)
 	if err != nil {
 		return nil, err
-	}
-	if len(registrationApplications) == 0 {
-
 	}
 
 	return lo.Map(registrationApplications, func(item dto.RegistrationApplication, _ int) *entity.RegistrationApplication {

@@ -56,6 +56,15 @@ func (self *DriverRepositorySQLTests) createCar() *entity.Car {
 	return car
 }
 
+func (self *DriverRepositorySQLTests) TestGetDrivers() {
+	driver := self.createDriver()
+
+	result, err := self.repository.GetDrivers(self.ctx)
+
+	self.NoError(err)
+	self.Contains(result, driver)
+}
+
 func (self *DriverRepositorySQLTests) createDriver() *entity.Driver {
 	car := self.createCar()
 	license := entity.NewDriverLicense("test_certificate", time.Unix(1, 0), time.Unix(2, 0), time.Unix(3, 0), "rus")

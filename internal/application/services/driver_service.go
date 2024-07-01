@@ -30,3 +30,7 @@ func (self *DriverService) GetDriverByPhoneNumber(ctx context.Context, phone ent
 
 	return driver, nil
 }
+
+func (self *DriverService) GetDrivers(ctx context.Context) ([]*entity.Driver, error) {
+	return self.driverRepository.GetDrivers(ctx)
+}

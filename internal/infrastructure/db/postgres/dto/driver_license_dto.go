@@ -8,7 +8,7 @@ import (
 )
 
 type DriverLicenseDTO struct {
-	ID                      uuid.UUID `db:"id"`
+	ID                      uuid.UUID `db:"license_id"`
 	RegistrationCertificate string    `db:"registration_certificate"`
 	DrivingExperience       time.Time `db:"driving_experience"`
 	IssueDate               time.Time `db:"issue_date"`

@@ -31,6 +31,8 @@ type RegistrationApplication struct {
 	CarVIN     *string
 	CarNumber  *string
 	CarLicense *string
+
+	WorkRule *WorkRule
 }
 
 func NewRegistrationApplication(id int, date time.Time) *RegistrationApplication {
@@ -42,6 +44,9 @@ func NewRegistrationApplication(id int, date time.Time) *RegistrationApplication
 }
 
 func (self *RegistrationApplication) Fullname() string {
+	if self.LastName == nil || self.FirstName == nil {
+		return "имя не указано"
+	}
 	if self.MiddleName != nil {
 		return fmt.Sprintf("%s %s %s", *self.LastName, *self.FirstName, *self.MiddleName)
 	}
@@ -83,4 +88,8 @@ func (self *RegistrationApplication) SetCar(year int, number string, license str
 
 func (self *RegistrationApplication) SetStatus(status string) {
 	self.Status = status
+}
+
+func (self *RegistrationApplication) SetWorkRule(rule WorkRule) {
+	self.WorkRule = &rule
 }

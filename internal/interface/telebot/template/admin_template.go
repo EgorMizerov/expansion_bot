@@ -47,21 +47,27 @@ var GetCardsInfo = `Кол-во человек с картой Т-Банка {{ 
 
 var RegistrationApplicationsTemplate = `
 {{- if .Items -}}
-Заявки на регистрацию
+Для редактирования заявки
+введите его идентификатор
 
 {{ range .Items -}}
-{{ .FormattedTime .Date }} [{{ .Fullname }}]({{ .Link }})
+{{ .FormattedTime .Date }} \[{{.Status}}] ` + " (`{{ .ID }}`) " + `[{{ .Fullname }}]({{ .Link }})
 {{ end -}}
 {{- else -}}
 Список заявок пуст!
 {{- end -}}`
 
-var DriversListTemplate = `Для получения полной информации о водителе
+var DriversListTemplate = `
+{{- if .Items -}}
+Для получения полной информации о водителе
 введите его номер телефона
 
 {{ range .Items -}}
 {{ .Fullname }} {{ .PhoneNumber }}
-{{ end -}}`
+{{ end -}}
+{{- else -}}
+Список пользователей пуст!
+{{- end -}}`
 
 var DriverInfoTemplate = `Информация о водителе
 
@@ -80,3 +86,24 @@ var DriversCarInfoTemplate = `Информация об автомобиле
 Год выпуска автомобиля: {{ .Year }}
 VIN автомобиля: {{ .VIN }}
 Гос\. Номер автомобиля: {{ .Number }}`
+
+var RegistrationApplicationTemplate = `Проверьте корректность введенных данных и подтвердите регистрацию водителя
+
+ФИО: {{ .FullName }}
+Номер телефона: {{ .PhoneNumber }}
+Адрес проживания: {{ .Address }}
+Выбранный тариф: {{ .WorkRule.Name }}
+
+Водительский стаж с: {{ .FormattedTime .DrivingExperience }}
+Серия и номер ВУ: {{ .LicenseNumber }}
+Страна выдачи ВУ: {{ .LicenseCountry }}
+Дата выдачи ВУ: {{ .FormattedTime .LicenseIssueDate }}
+Дата окончания действия ВУ: {{ .FormattedTime .LicenseExpiryDate }}
+
+Марка автомобиля: {{ .CarBrand }}
+Модель автомобиля: {{ .CarModel }}
+Цвет автомобиля {{ .CarColor }}
+Год выпуска автомобиля: {{.CarYear }}
+VIN автомобиля: {{ .CarVIN }}
+Гос. Номер автомобиля: {{ .CarNumber }}
+`

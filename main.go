@@ -88,7 +88,7 @@ func main() {
 	guestRepository := postgres.NewGuestRepository(db)
 
 	adminService := services.NewAdminService(driverRepository, carRepository, fleetClient, jumpClient)
-	registrationApplicationService := services.NewRegistrationApplicationService(fleet2Client, jumpClient, registrationApplicationRepository, driverRepository, carRepository)
+	registrationApplicationService := services.NewRegistrationApplicationService(fleet2Client, jumpClient, registrationApplicationRepository, driverRepository, carRepository, guestRepository)
 	driverService := services.NewDriverService(driverRepository)
 
 	bot.Use(middleware.LoggerMiddleware(logger))
@@ -96,7 +96,7 @@ func main() {
 	telebot.NewGuestHandler(bot, guestRepository)
 
 	go func() {
-		err := http.ListenAndServe(":8081", rest.NewJumpWebhook(registrationApplicationService, bot))
+		err := http.ListenAndServe(":8081", rest.NewJumpWebhook(registrationApplicationService, guestRepository, bot))
 		if err != nil {
 			panic(err)
 		}

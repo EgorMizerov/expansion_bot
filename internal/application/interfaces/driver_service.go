@@ -15,4 +15,5 @@ var (
 //go:generate mockery --name DriverService
 type DriverService interface {
 	GetDriverByPhoneNumber(ctx context.Context, phone entity.PhoneNumber) (*entity.Driver, error)
+	GetDrivers(ctx context.Context) ([]*entity.Driver, error)
 }
