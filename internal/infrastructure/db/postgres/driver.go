@@ -30,9 +30,14 @@ const (
 		FROM drivers AS d
 		JOIN driver_license AS dl ON d.driver_license_id = dl.id`
 
-	getDriverByIDQuery          = `SELECT id AS driver_id, telegram_id, fleet_id, jump_id, first_name, last_name, middle_name, city, phone_number, created_at, accept_cash, is_self_employed, car_id, driver_license_id FROM drivers WHERE id=:driver_id`
-	getDriverByPhoneNumberQuery = `SELECT id AS driver_id, telegram_id, fleet_id, jump_id, first_name, last_name, middle_name, city, phone_number, created_at, accept_cash, is_self_employed, car_id, driver_license_id FROM drivers WHERE phone_number=:phone_number`
-	getDriverLicenseByIDQuery   = `SELECT * FROM driver_license WHERE id=:license_id`
+	getDriverByIDQuery = `SELECT d.id AS driver_id, d.telegram_id, d.fleet_id, d.jump_id, d.first_name, d.last_name, d.middle_name, d.city, d.phone_number, d.created_at, d.accept_cash, d.is_self_employed, d.car_id, d.driver_license_id, dl.id AS license_id, dl.registration_certificate, dl.driving_experience, dl.issue_date, dl.expiry_date, dl.country 
+		FROM drivers AS d
+		JOIN driver_license AS dl ON d.driver_license_id = dl.id
+		WHERE d.id=:driver_id`
+	getDriverByPhoneNumberQuery = `SELECT d.id AS driver_id, d.telegram_id, d.fleet_id, d.jump_id, d.first_name, d.last_name, d.middle_name, d.city, d.phone_number, d.created_at, d.accept_cash, d.is_self_employed, d.car_id, d.driver_license_id, dl.id AS license_id, dl.registration_certificate, dl.driving_experience, dl.issue_date, dl.expiry_date, dl.country 
+		FROM drivers AS d
+		JOIN driver_license AS dl ON d.driver_license_id = dl.id
+		WHERE d.phone_number=:phone_number`
 )
 
 type DriverRepository struct {
@@ -56,31 +61,21 @@ func (self *DriverRepository) CreateDriver(ctx context.Context, driver *entity.D
 }
 
 func (self *DriverRepository) GetDriverByID(ctx context.Context, driverId entity.DriverID) (*entity.Driver, error) {
-	var driver dto.DriverDTO
-	var license dto.DriverLicenseDTO
-	if err := self.db.NamedQueryRowContext(ctx, getDriverByIDQuery, map[string]interface{}{"id": uuid.UUID(driverId)}).
-		StructScan(&driver); err != nil {
+	var driverWithLicense dto.DriverWithLicenseDTO
+	if err := self.db.NamedQueryRowContext(ctx, getDriverByIDQuery, map[string]interface{}{"driver_id": uuid.UUID(driverId)}).
+		StructScan(&driverWithLicense); err != nil {
 		return nil, err
 	}
-	if err := self.db.NamedQueryRowContext(ctx, getDriverLicenseByIDQuery, map[string]interface{}{"id": driver.DriverLicenseID}).
-		StructScan(&license); err != nil {
-		return nil, err
-	}
-	return driver.ToDriver(license.ToDriverLicense()), nil
+	return driverWithLicense.ToDriver(driverWithLicense.ToDriverLicense()), nil
 }
 
 func (self *DriverRepository) GetDriverByPhoneNumber(ctx context.Context, phone entity.PhoneNumber) (*entity.Driver, error) {
-	var driver dto.DriverDTO
-	var license dto.DriverLicenseDTO
-	if err := self.db.NamedQueryRowContext(ctx, getDriverByPhoneNumberQuery, map[string]interface{}{"phone_number": string(phone)}).
-		StructScan(&driver); err != nil {
+	var driverWithLicense dto.DriverWithLicenseDTO
+	if err := self.db.NamedQueryRowContext(ctx, getDriverByPhoneNumberQuery, map[string]interface{}{"phone_number": phone.String()}).
+		StructScan(&driverWithLicense); err != nil {
 		return nil, err
 	}
-	if err := self.db.NamedQueryRowContext(ctx, getDriverLicenseByIDQuery, map[string]interface{}{"id": driver.DriverLicenseID}).
-		StructScan(&license); err != nil {
-		return nil, err
-	}
-	return driver.ToDriver(license.ToDriverLicense()), nil
+	return driverWithLicense.ToDriver(driverWithLicense.ToDriverLicense()), nil
 }
 
 func (self *DriverRepository) GetDrivers(ctx context.Context) ([]*entity.Driver, error) {
