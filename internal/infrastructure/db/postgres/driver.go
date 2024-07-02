@@ -31,7 +31,7 @@ const (
 		JOIN driver_license AS dl ON d.driver_license_id = dl.id`
 
 	getDriverByIDQuery          = `SELECT id AS driver_id, telegram_id, fleet_id, jump_id, first_name, last_name, middle_name, city, phone_number, created_at, accept_cash, is_self_employed, car_id, driver_license_id FROM drivers WHERE id=:driver_id`
-	getDriverByPhoneNumberQuery = `SELECT * FROM drivers WHERE phone_number=:phone_number`
+	getDriverByPhoneNumberQuery = `SELECT id AS driver_id, telegram_id, fleet_id, jump_id, first_name, last_name, middle_name, city, phone_number, created_at, accept_cash, is_self_employed, car_id, driver_license_id FROM drivers WHERE phone_number=:phone_number`
 	getDriverLicenseByIDQuery   = `SELECT * FROM driver_license WHERE id=:license_id`
 )
 
