@@ -20,6 +20,7 @@ var (
 	SetPercentWorkRuleForApplicationButton             = InlineButton{RXUnique: SetPercentWorkRuleForApplicationRegexp.Endpoint()}
 	SetPerDayWorkRuleForApplicationButton              = InlineButton{RXUnique: SetPerDayWorkRuleForApplicationRegexp.Endpoint()}
 	ConfirmRegistrationApplicationButton               = InlineButton{RXUnique: ConfirmRegistrationApplicationRegexp.Endpoint()}
+	DriverInfoFromCarToDriverInfoButton                = InlineButton{RXUnique: DriverInfoFromCarToDriverInfoRegexp.Endpoint()}
 )
 
 func AdminMenuMarkup() *ReplyMarkup {
@@ -32,20 +33,23 @@ func AdminMenuMarkup() *ReplyMarkup {
 	}
 }
 
-func DriverInfoMarkup() *ReplyMarkup {
+func DriverInfoMarkup(phoneNumber entity.PhoneNumber) *ReplyMarkup {
 	return &ReplyMarkup{
 		ResizeKeyboard: true,
 		InlineKeyboard: [][]InlineButton{
-			{DriverInfoShowDriverLicenseInfoButton, DriverInfoShowCarInfoButton},
+			{
+				{Text: "Водительское удостоверение", Data: fmt.Sprintf("rx:di_s_dli:%s", phoneNumber)},
+				{Text: "Автомобиль", Data: fmt.Sprintf("rx:di_s_ci:%s", phoneNumber)},
+			},
 		},
 	}
 }
 
-func DriverCarInfoMarkup() *ReplyMarkup {
+func DriverCarInfoMarkup(phoneNumber entity.PhoneNumber) *ReplyMarkup {
 	return &ReplyMarkup{
 		ResizeKeyboard: true,
 		InlineKeyboard: [][]InlineButton{
-			{DriverInfoShowCarInfoBackButton},
+			{{Text: "Вернуться назад", Data: fmt.Sprintf("rx:di_f_c_t_di:%s", phoneNumber)}},
 		},
 	}
 }

@@ -87,6 +87,14 @@ var DriversCarInfoTemplate = `Информация об автомобиле
 VIN автомобиля: {{ .VIN }}
 Гос\. Номер автомобиля: {{ .Number }}`
 
+var DriversLicenseInfoTemplate = `Информация о водительском удостоверении
+
+Серия и номер: {{ .LicenseNumber }}
+Дата выдачи: {{ .FormattedTime .LicenseIssueDate }}
+Дата окончания действия: {{ .FormattedTime .LicenseExpiryDate }}
+Водительский стаж: {{ .LicenseDrivingExperience }}
+Страна выдачи: {{ .LicenseCountry }}`
+
 var RegistrationApplicationTemplate = `Проверьте корректность введенных данных и подтвердите регистрацию водителя
 
 ФИО: {{ .FullName }}

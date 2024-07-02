@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+
+	"github.com/EgorMizerov/expansion_bot/internal/domain/entity"
 )
 
 type Regexp string
@@ -17,6 +19,9 @@ const (
 	SetPercentSelfEmployedWorkRuleForApplicationRegexp = Regexp(`psewr:\d`)
 	SetPerDayWorkRuleForApplicationRegexp              = Regexp(`pdwr:\d`)
 	ConfirmRegistrationApplicationRegexp               = Regexp(`cf_ra:\d`)
+	DriverInfoFromCarToDriverInfoRegexp                = Regexp(`di_f_c_t_di:+\d{11}`)
+	DriverInfoShowDriverLicenseInfoRegexp              = Regexp(`di_s_dli:+\d{11}`)
+	DriverInfoShowCarInfoRegexp                        = Regexp(`di_s_ci:+\d{11}`)
 )
 
 func (self Regexp) Endpoint() string {
@@ -28,4 +33,10 @@ func (self Regexp) GetNumber() int {
 	submatch := rx.FindStringSubmatch(string(self))
 	n, _ := strconv.Atoi(submatch[0])
 	return n
+}
+
+func (self Regexp) GetPhoneNumber() entity.PhoneNumber {
+	rx := regexp.MustCompile(`\+\d{11}`)
+	submatch := rx.FindStringSubmatch(string(self))
+	return entity.PhoneNumber(submatch[0])
 }

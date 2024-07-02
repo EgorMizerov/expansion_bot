@@ -1,6 +1,8 @@
 services:
   bot:
     image: "egormizerov/expansion_bot:latest"
+    build:
+      dockerfile: Dockerfile
     container_name: bot
     restart: always
     ports:
@@ -31,6 +33,7 @@ services:
 
   postgres:
     image: "postgres"
+    container_name: postgres
     restart: "always"
     env_file: .env
     ports:

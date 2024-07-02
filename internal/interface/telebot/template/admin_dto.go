@@ -119,3 +119,15 @@ type DriversCarInfoData struct {
 	VIN    string
 	Number string
 }
+
+type DriversLicenseInfoData struct {
+	LicenseNumber            string
+	LicenseIssueDate         time.Time
+	LicenseExpiryDate        time.Time
+	LicenseDrivingExperience int
+	LicenseCountry           string
+}
+
+func (self DriversLicenseInfoData) FormattedTime(t time.Time) string {
+	return t.Format(time.DateOnly)
+}

@@ -42,7 +42,6 @@ func NewAdminHandler(bot *Bot, stateMachine FSM, driverService interfaces.Driver
 
 	bot.HandleStart(entity.AdminRole, admin.Menu)
 	bot.Handle(markup.AdminUsersButton.Text, admin.DriversList, middleware.AdminAuth())
-	bot.Handle(markup.DriverPhoneRegexp.Endpoint(), admin.GetDriverByPhone(false), middleware.AdminAuth())
 	{ // Registration Applications
 		bot.Handle(markup.AdminUsersRegistrationApplicationsButton.Text, admin.RegistrationApplications, middleware.AdminAuth())
 		bot.Handle(markup.RegistrationApplicationIDRegexp.Endpoint(), admin.EditRegistrationApplications, middleware.AdminAuth())
@@ -56,9 +55,11 @@ func NewAdminHandler(bot *Bot, stateMachine FSM, driverService interfaces.Driver
 			bot.Handle(markup.SetPerDayWorkRuleForApplicationRegexp.Endpoint(), admin.SetWorkRuleForApplication(entity.PerDayWorkRule), middleware.AdminAuth())
 		}
 	}
-
-	bot.Handle(&markup.DriverInfoShowCarInfoButton, admin.GetDriversCarInfo, middleware.AdminAuth())
-	bot.Handle(&markup.DriverInfoShowCarInfoBackButton, admin.GetDriverByPhone(true), middleware.AdminAuth())
+	{ // Driver Info
+		bot.Handle(markup.DriverPhoneRegexp.Endpoint(), admin.GetDriverByPhone(false), middleware.AdminAuth())
+		bot.Handle(markup.DriverInfoShowDriverLicenseInfoRegexp.Endpoint(), admin.GetDriversLicenseInfo, middleware.AdminAuth())
+		bot.Handle(markup.DriverInfoFromCarToDriverInfoRegexp.Endpoint(), admin.GetDriverByPhone(true), middleware.AdminAuth())
+	}
 
 	return admin
 }
@@ -174,7 +175,13 @@ func (self *AdminHandler) DriversList(ctx tele.Context) error {
 
 func (self *AdminHandler) GetDriverByPhone(edit bool) func(ctx tele.Context) error {
 	return func(ctx tele.Context) error {
-		driver, err := self.driverService.GetDriverByPhoneNumber(ctx, entity.PhoneNumber(ctx.Text()))
+		var phoneNumber entity.PhoneNumber
+		if edit {
+			phoneNumber = markup.Regexp(ctx.Callback().Data).GetPhoneNumber()
+		} else {
+			phoneNumber = entity.PhoneNumber(ctx.Text())
+		}
+		driver, err := self.driverService.GetDriverByPhoneNumber(ctx, phoneNumber)
 		if err != nil {
 			if errors.Is(err, interfaces.ErrDriverNotFound) {
 				return ctx.Send(fmt.Sprintf("Водителя с номером %s не суещствует!", ctx.Text()))
@@ -192,25 +199,31 @@ func (self *AdminHandler) GetDriverByPhone(edit bool) func(ctx tele.Context) err
 		})
 
 		if edit {
-			return ctx.Edit(message, markup.DriverInfoMarkup())
+			return ctx.Edit(message, markup.DriverInfoMarkup(driver.PhoneNuber))
 		} else {
-			return ctx.Send(message, markup.DriverInfoMarkup())
+			return ctx.Send(message, markup.DriverInfoMarkup(driver.PhoneNuber))
 		}
 	}
 }
 
-func (self *AdminHandler) GetDriversCarInfo(ctx tele.Context) error {
-	car := entity.NewCar("some_id", "Lada", "Vesta", 2012, "Белый", "somevin", "П123НС159", "9923742455")
+func (self *AdminHandler) GetDriversLicenseInfo(ctx tele.Context) error {
+	phoneNumber := markup.Regexp(ctx.Callback().Data).GetPhoneNumber()
+	driver, err := self.driverService.GetDriverByPhoneNumber(ctx, phoneNumber)
+	if err != nil {
+		if errors.Is(err, interfaces.ErrDriverNotFound) {
+			return ctx.Send(fmt.Sprintf("Водителя с номером %s не суещствует!", ctx.Text()))
+		}
+		return Error(ctx, err)
+	}
 	return ctx.Edit(
-		template.ParseTemplate(template.DriversCarInfoTemplate, template.DriversCarInfoData{
-			Brand:  car.Brand,
-			Model:  car.Model,
-			Color:  car.Color,
-			Year:   car.Year,
-			VIN:    car.VIN,
-			Number: car.LicensePlateNumber,
+		template.ParseTemplate(template.DriversLicenseInfoTemplate, template.DriversLicenseInfoData{
+			LicenseNumber:            driver.DriverLicense.RegistrationCertificate,
+			LicenseIssueDate:         driver.DriverLicense.IssueDate,
+			LicenseExpiryDate:        driver.DriverLicense.ExpiryDate,
+			LicenseDrivingExperience: driver.DriverLicense.DrivingExperience.Year(),
+			LicenseCountry:           driver.DriverLicense.Country,
 		}),
-		markup.DriverCarInfoMarkup(),
+		markup.DriverCarInfoMarkup(driver.PhoneNuber),
 	)
 }
 
