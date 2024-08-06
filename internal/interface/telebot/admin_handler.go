@@ -87,7 +87,7 @@ func (self *AdminHandler) RegistrationApplications(ctx tele.Context) error {
 	}
 
 	return ctx.EditOrSend(
-		template.ParseTemplate(template.RegistrationApplicationsTemplate, registrationApplicationsData), tele.ModeDefault,
+		template.ParseTemplate(template.RegistrationApplicationsTemplate, registrationApplicationsData),
 	)
 }
 

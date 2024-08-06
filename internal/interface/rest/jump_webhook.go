@@ -10,6 +10,7 @@ import (
 	"github.com/EgorMizerov/expansion_bot/internal/domain/entity"
 	"github.com/EgorMizerov/expansion_bot/internal/domain/repository"
 	"github.com/EgorMizerov/expansion_bot/internal/interface/telebot"
+	tele "github.com/EgorMizerov/telebot"
 )
 
 type JumpWebhook struct {
@@ -58,25 +59,26 @@ func (self *JumpWebhook) ServeHTTP(writer http.ResponseWriter, request *http.Req
 
 		if callback.Item.Status != nil {
 			application.SetStatus(callback.Item.Status.Slug)
-			//			if callback.Item.Status.Slug == "registered" {
-			//				err = self.registrationApplicationService.ConfirmRegistrationApplication(request.Context(), application)
-			//				if err != nil {
-			//					return
-			//				}
-			//				guest, err := self.guestRepository.GetGuestByPhoneNumber(request.Context(), entity.PhoneNumber(*application.PhoneNumber))
-			//				if err != nil {
-			//					return
-			//				}
-			//				msg := `
-			//Привет! Рады видеть в нашей команде!
-			//В разделе “Информация” ты можешь найти:
-			//Подробную инструкцию по использованию телеграм бота, обязательно ознакомься перед началом использования, также мы собрали самую важную информацию и тонкости по работе в такси. Все это ты можешь найти нажав кнопку “Начало работы”
-			//Ответы на большинство вопросов можешь найти в этом же разделе по кнопке “Часто задаваемые вопросы”
-			//А если хочешь зарабатывать больше - ознакомься с проводимыми акциями нажав кнопку  “Бонусы и Акции”!
-			//Если у тебя останутся  вопросы, ты найдешь как с нами связаться в разделе "Связь с нами" -> “Связь с диспетчером”`
-			//				self.bot.Send(&tele.User{ID: int64(guest.TelegramID)}, msg)
-			//				return
-			//			}
+			if callback.Item.Status.Slug == "registered" {
+				err = self.registrationApplicationService.ConfirmRegistrationApplication(request.Context(), application)
+				if err != nil {
+					return
+				}
+
+				guest, err := self.guestRepository.GetGuestByPhoneNumber(request.Context(), entity.PhoneNumber(*application.PhoneNumber))
+				if err != nil {
+					return
+				}
+				msg := `
+			Привет! Рады видеть в нашей команде!
+			В разделе “Информация” ты можешь найти:
+			Подробную инструкцию по использованию телеграм бота, обязательно ознакомься перед началом использования, также мы собрали самую важную информацию и тонкости по работе в такси. Все это ты можешь найти нажав кнопку “Начало работы”
+			Ответы на большинство вопросов можешь найти в этом же разделе по кнопке “Часто задаваемые вопросы”
+			А если хочешь зарабатывать больше - ознакомься с проводимыми акциями нажав кнопку  “Бонусы и Акции”!
+			Если у тебя останутся  вопросы, ты найдешь как с нами связаться в разделе "Связь с нами" -> “Связь с диспетчером”`
+				self.bot.Send(&tele.User{ID: int64(guest.TelegramID)}, msg)
+				return
+			}
 		}
 		if personInfo := callback.Item.PersonInfo; personInfo != nil {
 			application.SetPersonInfo(

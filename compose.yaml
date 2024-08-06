@@ -1,6 +1,5 @@
 services:
   bot:
-    image: "egormizerov/expansion_bot:latest"
     build:
       dockerfile: Dockerfile
     container_name: bot
@@ -8,6 +7,9 @@ services:
     ports:
       - "8081:8081"
     env_file: .env
+    links:
+      - postgres
+      - redis
     depends_on:
       - migrations
       - postgres
@@ -16,6 +18,8 @@ services:
   migrations:
     image: ghcr.io/kukymbr/goose-docker:3.21.1
     env_file: .env
+    links:
+      - postgres
     volumes:
       - ./migrations:/migrations
     depends_on:

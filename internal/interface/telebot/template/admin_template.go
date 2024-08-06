@@ -51,7 +51,7 @@ var RegistrationApplicationsTemplate = `
 введите его идентификатор
 
 {{ range .Items -}}
-{{ .FormattedTime .Date }} \[{{.Status}}] ` + " (`{{ .ID }}`) " + `[{{ .Fullname }}]({{ .Link }})
+{{ .FormattedTime .Date }} [[{{.Status}}]] ` + " (`{{ .ID }}`) " + `[{{ .Fullname }}]({{ .Link }})
 {{ end -}}
 {{- else -}}
 Список заявок пуст!

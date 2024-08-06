@@ -90,10 +90,11 @@ func main() {
 	adminService := services.NewAdminService(driverRepository, carRepository, fleetClient, jumpClient)
 	registrationApplicationService := services.NewRegistrationApplicationService(fleet2Client, jumpClient, registrationApplicationRepository, driverRepository, carRepository, guestRepository)
 	driverService := services.NewDriverService(driverRepository)
+	guestService := services.NewGuestService(guestRepository)
 
 	bot.Use(middleware.LoggerMiddleware(logger))
 	telebot.NewAdminHandler(bot, stateMachine, driverService, adminService, registrationApplicationService)
-	telebot.NewGuestHandler(bot, guestRepository)
+	telebot.NewGuestHandler(bot, guestService)
 
 	go func() {
 		err := http.ListenAndServe(":8081", rest.NewJumpWebhook(registrationApplicationService, guestRepository, bot))

@@ -3,21 +3,20 @@ package telebot
 import (
 	"fmt"
 
-	"github.com/EgorMizerov/expansion_bot/internal/domain/repository"
-	tele "github.com/EgorMizerov/telebot"
-	"github.com/pkg/errors"
-
+	"github.com/EgorMizerov/expansion_bot/internal/application/interfaces"
 	"github.com/EgorMizerov/expansion_bot/internal/domain/entity"
 	"github.com/EgorMizerov/expansion_bot/internal/interface/telebot/markup"
+	tele "github.com/EgorMizerov/telebot"
+	"github.com/pkg/errors"
 )
 
 type GuestHandler struct {
-	guestRepository repository.GuestRepository
+	guestService interfaces.GuestService
 }
 
-func NewGuestHandler(bot *Bot, guestRepository repository.GuestRepository) *GuestHandler {
+func NewGuestHandler(bot *Bot, guestRepository interfaces.GuestService) *GuestHandler {
 	guest := &GuestHandler{
-		guestRepository: guestRepository,
+		guestService: guestRepository,
 	}
 
 	bot.HandleStart(entity.GuestRole, guest.Start)
@@ -34,13 +33,16 @@ func (self *GuestHandler) Start(ctx tele.Context) error {
 }
 
 func (self *GuestHandler) OnContact(ctx tele.Context) error {
-	guest := entity.NewGuest(
-		entity.TelegramID(ctx.Message().Contact.UserID),
+	err := self.guestService.CreateGuest(
+		ctx,
+		entity.TelegramID(ctx.Sender().ID),
 		entity.PhoneNumber(ctx.Message().Contact.PhoneNumber),
 	)
-	err := self.guestRepository.CreateGuest(ctx, guest)
-	if err != nil && !errors.Is(err, repository.ErrGuestAlreadyExists) {
-		return Error(ctx, errors.Wrap(err, "failed to create guest"))
+	if errors.Is(err, interfaces.ErrGuestAlreadyExists) {
+		return ctx.Send("Мы получили ваш контакт. Теперь заполните анкету!", markup.SignUpMarkup())
+	}
+	if err != nil {
+		return Error(ctx, err)
 	}
 
 	return ctx.Send("Мы получили ваш контакт. Теперь заполните анкету!", markup.SignUpMarkup())
