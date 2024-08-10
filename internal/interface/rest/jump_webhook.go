@@ -62,6 +62,7 @@ func (self *JumpWebhook) ServeHTTP(writer http.ResponseWriter, request *http.Req
 			if callback.Item.Status.Slug == "registered" {
 				err = self.registrationApplicationService.ConfirmRegistrationApplication(request.Context(), application)
 				if err != nil {
+					slog.Info("failed to confirm registration application", slog.String("err", err.Error()))
 					return
 				}
 
@@ -80,6 +81,7 @@ func (self *JumpWebhook) ServeHTTP(writer http.ResponseWriter, request *http.Req
 				if err != nil {
 					slog.Info("failed to send message to user after registration application apply")
 				}
+				return
 			}
 		}
 		if personInfo := callback.Item.PersonInfo; personInfo != nil {
