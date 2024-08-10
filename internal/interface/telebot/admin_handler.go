@@ -97,8 +97,8 @@ func (self *AdminHandler) EditRegistrationApplications(ctx tele.Context) error {
 	if err != nil {
 		return Error(ctx, errors.Wrap(err, "failed to get registration application"))
 	}
-	if registrationApplication.Status != "registered" {
-		return ctx.Send("Редактировать можно только те заявки, что находятся в статусе \"registered\". Для этого их нужно принять в jump!")
+	if registrationApplication.Status != "not_processed" {
+		return ctx.Send("Редактировать можно только те заявки, что находятся в статусе \"not_processed\". Для этого их нужно принять в jump!")
 	}
 
 	return ctx.Send("Выберите тариф", markup.ChooseWorkRuleMarkup(registrationApplication.ID))
