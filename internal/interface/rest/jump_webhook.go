@@ -76,8 +76,10 @@ func (self *JumpWebhook) ServeHTTP(writer http.ResponseWriter, request *http.Req
 			Ответы на большинство вопросов можешь найти в этом же разделе по кнопке “Часто задаваемые вопросы”
 			А если хочешь зарабатывать больше - ознакомься с проводимыми акциями нажав кнопку  “Бонусы и Акции”!
 			Если у тебя останутся  вопросы, ты найдешь как с нами связаться в разделе "Связь с нами" -> “Связь с диспетчером”`
-				self.bot.Send(&tele.User{ID: int64(guest.TelegramID)}, msg)
-				return
+				_, err = self.bot.Send(&tele.User{ID: int64(guest.TelegramID)}, msg)
+				if err != nil {
+					slog.Info("failed to send message to user after registration application apply")
+				}
 			}
 		}
 		if personInfo := callback.Item.PersonInfo; personInfo != nil {
